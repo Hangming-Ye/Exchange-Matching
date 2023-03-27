@@ -4,9 +4,9 @@
 
 Programming Language: C++ 
 
-Database： Postgres （C++ SQL library, pending search）
+Database： Postgres
 
-XML： XML Library（pending search）
+XML： XML Library（pugixml）
 
 
 
