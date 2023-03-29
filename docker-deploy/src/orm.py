@@ -5,7 +5,7 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 class StatusEnum(enum.Enum):
-    opne = 1
+    open = 1
     canceled = 2
     executed = 3
 
