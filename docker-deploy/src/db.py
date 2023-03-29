@@ -1,15 +1,21 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import Session, sessionmaker, declarative_base
 import psycopg2
 from orm import *
 
-def initDB():
-    engine = create_engine("postgresql+psycopg2://postgres:passw0rd@0.0.0.0:5432/EM_SYSTEM",future=True)
-    return engine
+def connectDB():
+    return create_engine("postgresql+psycopg2://postgres:passw0rd@0.0.0.0:5432/EM_SYSTEM",future=True)
 
-def createTable(engine):
+def createAllTable(engine):
     Base.metadata.create_all(engine)
-    return
 
-engine = initDB()
-createTable(engine)
+def dropAllTable(engine):
+    Base.metadata.drop_all(engine)
+
+def initDB():
+    engine = connectDB()
+    insp = inspect(engine)
+    if not (insp.has_table("account") and insp.has_table("executed") and insp.has_table("order") and insp.has_table("position")):
+        dropAllTable(engine)
+        createAllTable(engine)
+    return engine
