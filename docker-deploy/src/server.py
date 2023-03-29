@@ -2,7 +2,7 @@ import socket
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import tostring
 from datetime import datetime
-PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
 def process_request(fd):
     while (True):
         request = fd.recv()
