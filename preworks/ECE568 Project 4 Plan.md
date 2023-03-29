@@ -2,11 +2,11 @@
 
 ## Tech-stack
 
-Programming Language: C++ 
+Programming Language: Python
 
-Database： Postgres
+Database： Postgres, ORM SQLAlchemy
 
-XML： XML Library（pugixml）
+XML： XML Library（simple API for XML）
 
 
 
