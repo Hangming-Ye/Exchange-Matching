@@ -13,17 +13,17 @@ CREATE TABLE ORDER(
     status StatusType,
     accout_id INT,
     time BIGINT,
-    PRIMARY KEY (order_id),
+    PRIMARY KEY (tran_id),
     FOREIGN KEY (accout_id) REFERENCES ACCOUNT(accout_id) ON DELETE SET NULL ON UPDATE CASCADE,
 );
 
 CREATE TABLE EXECUTED( 
     executed_id SERIAL,
-    order_id INT,
+    tran_id INT,
     price REAL,
     time BIGINT,
     PRIMARY KEY (executed_id),
-    FOREIGN KEY (order_id) REFERENCES ORDER(order_id) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (tran_id) REFERENCES ORDER(tran_id) ON DELETE SET NULL ON UPDATE CASCADE,
 );
 
 CREATE TABLE POSITION( 
