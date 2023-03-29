@@ -1,12 +1,12 @@
 CREATE TABLE ACCOUNT(
     accout_id SERIAL,
     balance REAL,
-    PRIMARY KEY (accout_id)
+    PRIMARY KEY (accout_id),
 );
 
 CREATE TYPE StatusType AS ENUM('open','canceled','executed');
 CREATE TABLE ORDER(
-    order_id SERIAL,
+    tran_id SERIAL,
     symbol VARCHAR(256),
     remain_amount REAL,
     limit_price REAL,
