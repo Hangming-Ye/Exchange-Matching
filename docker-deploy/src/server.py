@@ -38,8 +38,8 @@ def parseXML(request):
                 accout_id = child.get('id')
                 balance = child.get('balance')
                 # now need to connect to database and insert this record into Account
-                # name function InsertAccount return a string with a format of xml
-                res = InsertAccount(accout_id, balance, res)
+                # name function InsertAccount 
+                InsertAccount(accout_id, balance, res)
 
             elif (child.tag == "symbol"):
                 sym = child.get('sym')
@@ -48,8 +48,8 @@ def parseXML(request):
                 accout_id = childOfSym.get('id')
                 amount = childOfSym.text
                 # now need to connect database and insert this record into Position
-                # name function InsertPosition return a string with a format of xml
-                res = InsertPosition(sym, accout_id, amount, res)
+                # name function InsertPosition 
+                InsertPosition(sym, accout_id, amount, res)
             else:
                 # please deal with error
                 print("error here please deal with")
@@ -68,25 +68,25 @@ def parseXML(request):
                 if (DeductAmount(accout_id, sym, limit)):
                     # now need to connect database and insert this record into Order
                     # with status 'open'
-                    # name function InsertOrder return a string with a format of xml
-                    res = InsertOrder(sym, amount, limit, time, res)
+                    # name function InsertOrder 
+                    InsertOrder(sym, amount, limit, time, res)
                 else:
                     # deal with error
                     # let rese include error information
                     # do something here
-                    res = res
+                    print
 
             elif (child.tag == "cancel"):
                 tran_id = child.get('id')
                 # now need to change database table Order to change its' status from open to cancel
-                # name function CancelOrder return a string with a format of xml
-                res = CancelOrder(tran_id, res)
+                # name function CancelOrder 
+                CancelOrder(tran_id, res)
 
             elif (child.tag == "query"):
                 tran_id = child.get('id')
                 # now need to query table Order and Executed to get all records
-                # name function QueryOrder return a string with a format of xml
-                res = QueryOrder(tran_id, res)
+                # name function QueryOrder 
+                QueryOrder(tran_id, res)
 
             else:
                 print("please deal with error here")
@@ -96,27 +96,27 @@ def parseXML(request):
 
 
 def InsertAccount(accout_id, balance, res):
-    return res
+    print
 
 
 def InsertPosition(sym, accout_id, amount, res):
-    return res
+    print
 
 
 def InsertOrder(sym, amount, limit, time, res):
-    return res
+    print
 
 
 def DeductAmount(accout_id, sym, limit):
-    return False
+    print
 
 
 def CancelOrder(tran_id, res):
-    return res
+    print
 
 
 def QueryOrder(tran_id, res):
-    return res
+    print
 
 
 def test(xml):
