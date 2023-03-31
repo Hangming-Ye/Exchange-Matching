@@ -36,7 +36,7 @@ class Order(Base):
         ans['symbol'] = self.symbol
         ans['remain_amount'] = self.remain_amount
         ans['limit_price'] = self.limit_price
-        ans['status'] = self.status
+        ans['status'] = self.status.name
         ans['time'] = self.time
         ans['account_id'] = self.account_id
         return ans

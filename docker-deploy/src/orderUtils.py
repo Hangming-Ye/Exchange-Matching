@@ -25,7 +25,7 @@ def createOrder(session, amount, price, sym, uid):
         modifyPosition(session, sym, uid, amount)
 
     # create order successfully
-    order = Order(remain_amount = amount, limit_price = price, symbol = sym, time = int(time.time()), account_id = uid, status = "Open")
+    order = Order(remain_amount = amount, limit_price = price, symbol = sym, time = int(time.time()), account_id = uid, status = StatusEnum.open)
     session.add(order)
     session.commit()
     return order.tran_id
@@ -35,7 +35,7 @@ def matchOrder(session, od_id):
     if od.status != "open":
         return -1
 
-    allOrder = session.query(Order.tran_id).filter(Order.symbol==od.symbol, Order.status=="open")
+    allOrder = session.query(Order.tran_id).filter(Order.symbol==od.symbol, Order.status==StatusEnum.open)
 
     # buy order
     if od.remain_amount > 0:
@@ -77,12 +77,12 @@ def executeOrder(session, new_id, old_id):
 
     buy.remain_amount -= exe_amount
     if buy.remain_amount == 0:
-        buy.status = "executed"
+        buy.status = StatusEnum.executed
     session.commit()
 
     sell.remain_amount += exe_amount
     if sell.remain_amount == 0:
-        sell.status = "executed"
+        sell.status = StatusEnum.executed
     session.commit()
 
     addExecuted(session, exe_amount, price, buy.tran_id, exeTime)
@@ -90,7 +90,7 @@ def executeOrder(session, new_id, old_id):
 
 
 def modifyBalance(session, uid, change):
-    user = session.query().get(uid)
+    user = session.query(Account).get(uid)
     if user == None:
         raise ArgumentError("User not exist")
     
@@ -116,7 +116,7 @@ def modifyPosition(session, sym, uid, change):
     session.commit()
 
 def addExecuted(session, amount, price, order_id, time):
-    newExe = Order(order_id = order_id, price = price, amount = amount, time = time)
+    newExe = Executed(order_id = order_id, price = price, amount = amount, time = time)
     session.add(newExe)
     session.commit()
     
@@ -125,12 +125,14 @@ def addExecuted(session, amount, price, order_id, time):
 
 def test():
     engine = initDB()
-    # DBSession = sessionmaker(bind=engine)
-    # session = DBSession()
-    # testaccount = Account(balance = 114514)
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    # user = session.query(Account).get(2)
+    # print(user.dto())
+    testaccount = Account(balance = 114514)
     # test = Order(symbol = "BTC", remain_amount = -10, limit_price = 90.0, status = "open", time = 200, account_id = 1)
-    # session.add(testaccount)
-    # session.commit()
+    session.add(testaccount)
+    session.commit()
     # acc = session.query(Account.account_id).all()
     # for a in acc:
     #     print(a[0])
@@ -139,4 +141,8 @@ def test():
     # tmp  = Order(symbol = "BTC", remain_amount = 10, limit_price = 100.0, status = "open", time = 111, account_id = 2)
     # ans = matchOrder(session, tmp)
     # print(ans)
+    test = Order(symbol = "BTC", remain_amount = -10, limit_price = 90.0, status = "open", time = 200, account_id = 1)
+    session.add(test)
+    session.commit()
+    print(test.dto())
 test()
