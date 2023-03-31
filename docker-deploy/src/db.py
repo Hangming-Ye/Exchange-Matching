@@ -19,3 +19,8 @@ def initDB():
         dropAllTable(engine)
         createAllTable(engine)
     return engine
+
+if __name__ == "__main__":
+    engine = connectDB()
+    dropAllTable(engine)
+    initDB()

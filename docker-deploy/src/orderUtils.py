@@ -102,12 +102,14 @@ def modifyBalance(session, uid, change):
 
 
 def modifyPosition(session, sym, uid, change):
+    print(uid)
+    print(sym)
     stock = session.query(Position).filter(Position.account_id == uid, Position.symbol == sym).first()
     # position not find
     if stock == None:
         raise ArgumentError("Position not exist")
     
-    stock = stock[0]
+    
     stock.amount += change
     # position amount insufficient
     if stock.amount < 0:
@@ -123,26 +125,26 @@ def addExecuted(session, amount, price, order_id, time):
     
 
 
-def test():
-    engine = initDB()
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
-    # user = session.query(Account).get(2)
-    # print(user.dto())
-    testaccount = Account(balance = 114514)
-    # test = Order(symbol = "BTC", remain_amount = -10, limit_price = 90.0, status = "open", time = 200, account_id = 1)
-    session.add(testaccount)
-    session.commit()
-    # acc = session.query(Account.account_id).all()
-    # for a in acc:
-    #     print(a[0])
-    # session.add(test)
-    # session.commit()
-    # tmp  = Order(symbol = "BTC", remain_amount = 10, limit_price = 100.0, status = "open", time = 111, account_id = 2)
-    # ans = matchOrder(session, tmp)
-    # print(ans)
-    test = Order(symbol = "BTC", remain_amount = -10, limit_price = 90.0, status = "open", time = 200, account_id = 1)
-    session.add(test)
-    session.commit()
-    print(test.dto())
-test()
+# def test():
+#     engine = initDB()
+#     DBSession = sessionmaker(bind=engine)
+#     session = DBSession()
+#     # user = session.query(Account).get(2)
+#     # print(user.dto())
+#     testaccount = Account(balance = 114514)
+#     # test = Order(symbol = "BTC", remain_amount = -10, limit_price = 90.0, status = "open", time = 200, account_id = 1)
+#     session.add(testaccount)
+#     session.commit()
+#     # acc = session.query(Account.account_id).all()
+#     # for a in acc:
+#     #     print(a[0])
+#     # session.add(test)
+#     # session.commit()
+#     # tmp  = Order(symbol = "BTC", remain_amount = 10, limit_price = 100.0, status = "open", time = 111, account_id = 2)
+#     # ans = matchOrder(session, tmp)
+#     # print(ans)
+#     test = Order(symbol = "BTC", remain_amount = -10, limit_price = 90.0, status = "open", time = 200, account_id = 1)
+#     session.add(test)
+#     session.commit()
+#     print(test.dto())
+# test()
