@@ -2,6 +2,8 @@ import socket
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import tostring
 from datetime import datetime
+from create import *
+
 PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
 def process_request(fd):
     while (True):
@@ -28,7 +30,7 @@ def server():
 
 # parse xml and call relevant function to deal with <create accout> <create postion> <open order> <cancel order> <query oder>
 # return response xml
-def parseXML(request):
+def parseXML(request,session):
     root = ET.fromstring(request)
     res = ET.Element('results')
     # first divide to two workflow: create/transaction
@@ -39,7 +41,8 @@ def parseXML(request):
                 balance = child.get('balance')
                 # now need to connect to database and insert this record into Account
                 # name function InsertAccount 
-                InsertAccount(accout_id, balance, res)
+                InsertAccount(session, accout_id, balance, res)
+              
 
             elif (child.tag == "symbol"):
                 sym = child.get('sym')
@@ -49,7 +52,8 @@ def parseXML(request):
                 amount = childOfSym.text
                 # now need to connect database and insert this record into Position
                 # name function InsertPosition 
-                InsertPosition(sym, accout_id, amount, res)
+                InsertPosition(session, sym, accout_id, amount, res)
+              
             else:
                 # please deal with error
                 print("error here please deal with")
@@ -80,13 +84,13 @@ def parseXML(request):
                 tran_id = child.get('id')
                 # now need to change database table Order to change its' status from open to cancel
                 # name function CancelOrder 
-                CancelOrder(tran_id, res)
+                CancelOrder(session, tran_id, res)
 
             elif (child.tag == "query"):
                 tran_id = child.get('id')
                 # now need to query table Order and Executed to get all records
                 # name function QueryOrder 
-                QueryOrder(tran_id, res)
+                QueryOrder(session, tran_id, res)
 
             else:
                 print("please deal with error here")
@@ -95,28 +99,7 @@ def parseXML(request):
     return res
 
 
-def InsertAccount(accout_id, balance, res):
-    print
 
-
-def InsertPosition(sym, accout_id, amount, res):
-    print
-
-
-def InsertOrder(sym, amount, limit, time, res):
-    print
-
-
-def DeductAmount(accout_id, sym, limit):
-    print
-
-
-def CancelOrder(tran_id, res):
-    print
-
-
-def QueryOrder(tran_id, res):
-    print
 
 
 def test(xml):
