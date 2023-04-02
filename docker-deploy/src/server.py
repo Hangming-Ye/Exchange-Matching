@@ -59,7 +59,6 @@ def parseXML(request,session):
             else:
                 # please deal with error
                 print("error here please deal with")
-
     elif root.tag == "transactions":
         accout_id = root.get(id)
         for child in root:
@@ -93,9 +92,6 @@ def parseXML(request,session):
     else:
         print("please deal with error here")
     return res
-
-
-
 
 
 def test(xml):

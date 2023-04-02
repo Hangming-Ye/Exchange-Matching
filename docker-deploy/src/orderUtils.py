@@ -10,6 +10,12 @@ import xml.etree.ElementTree as ET
 # amount 为啥允许小数？
 # 部分交易的时候， 如果buyer成交价格低于预付的价格，应当直接退款还是等到整个订单完成之后统一退款
 
+'''
+@Desc   : unit test function for transaction
+@Arg    : session: session of database conn, amount: transaction amount, 
+          limit: limit price, account_id: account_id of owner
+@Return : void
+'''
 def testMtd(session, amount, limit, sym, accout_id):
     res = ET.Element('results')
     try:
@@ -24,32 +30,56 @@ def testMtd(session, amount, limit, sym, accout_id):
     tree = ET.ElementTree(res)
     tree.write(str(accout_id)+".xml",xml_declaration=True,encoding='UTF-8')
 
-
+'''
+@Desc   : create the transaction and block transaction resources
+@Arg    : session: session of database conn, amount: transaction amount, 
+          limit: limit price, account_id: account_id of owner
+@Return : if success, return the id of created transaction
+@Excep  : Account doesn't exist, balance insufficient, position insufficient
+'''
 def createOrder(session, amount, price, sym, uid):
+    # check user existence
     if session.query(Account).get(uid) is None:
         raise ArgumentError("Account does not exist")
+    
     # buy order
     if amount > 0:
         modifyBalance(session, uid, -amount*price)
     #sell order
     elif amount < 0:
         modifyPosition(session, sym, uid, amount)
+
     # create order successfully
     order = Order(remain_amount = amount, limit_price = price, symbol = sym, time = int(time.time()), account_id = uid, status = StatusEnum.open)
     session.add(order)
     session.commit()
     return order.tran_id
 
-
+'''
+@Desc   : make transaction of specific order until no suitbale order or transaction is executed
+@Arg    : session: session of database conn, od_id: id of the transaction
+@Return : void
+'''
 def makeTransaction(session, od_id):
     match_id = matchOrder(session, od_id)
     while match_id != -1:
         executeOrder(session, od_id, match_id)
         match_id = matchOrder(session, od_id)
 
-
+'''
+@Desc   : find the match order which 
+            1. status is open
+            2. match the price best and time second 
+            3. have same symbol
+            4. not create by same account
+@Arg    : session: session of database conn, od_id: id of the transaction
+@Return : best matching transaction id if success, 
+          -1 when the transaction is not open or no matching transaction
+'''
 def matchOrder(session, od_id):
     od = session.query(Order).get(od_id)
+
+    # if order is not open
     if od.status != StatusEnum.open:
         return -1
 
@@ -69,7 +99,17 @@ def matchOrder(session, od_id):
     else:
         return -1
 
-
+'''
+@Desc   : excute the 2 transaction by   
+            1. determine executed price
+            2. modify the position of two account
+            3. modify order amount and status if needed
+            4. create executed for two orders
+            5. modify the balance of both buy and sell account
+@Arg    : session: session of database conn, new_id: trans_id of the newer created transaction
+          old_id: trans_id of the matched transaction
+@Return : void
+'''
 def executeOrder(session, new_id, old_id):
     new = session.query(Order).get(new_id)
     old = session.query(Order).get(old_id)
@@ -87,9 +127,6 @@ def executeOrder(session, new_id, old_id):
     exe_amount = min(buy.remain_amount, -sell.remain_amount)
     refund = (buy.limit_price - price) * exe_amount
 
-    if refund > 0:
-        modifyBalance(session, buy.account_id, refund)
-    modifyBalance(session, sell.account_id, price * exe_amount)
     modifyPosition(session, buy.symbol, buy.account_id, exe_amount)
 
     exeTime = int(time.time())
@@ -107,7 +144,17 @@ def executeOrder(session, new_id, old_id):
     addExecuted(session, exe_amount, price, buy.tran_id, exeTime)
     addExecuted(session, exe_amount, price, sell.tran_id, exeTime)
 
+    if refund > 0:
+        modifyBalance(session, buy.account_id, refund)
+    modifyBalance(session, sell.account_id, price * exe_amount)
 
+
+'''
+@Desc   : modify the balance of account by specifioc change
+@Arg    : session: database session conn, uid: account_id want to modify, change: modify amount(+ for add, - for minus)
+@Return : void
+@Excep  : User not exist, Insufficient Balance
+'''
 def modifyBalance(session, uid, change):
     user = session.query(Account).get(uid)
     if user == None:
@@ -119,7 +166,13 @@ def modifyBalance(session, uid, change):
     
     session.commit()
 
-
+'''
+@Desc   : modify the sym position of account by specifioc change
+@Arg    : session: database session conn, sym: symbol want to change, 
+          uid: account_id want to modify, change: modify amount(+ for add, - for minus)
+@Return : void
+@Excep  : Position not exist, Insufficient Share Amount
+'''
 def modifyPosition(session, sym, uid, change):
     stock = session.query(Position).filter(Position.account_id == uid, Position.symbol == sym).first()
     # position not find
@@ -140,12 +193,95 @@ def modifyPosition(session, sym, uid, change):
     session.commit()
 
 
+'''
+@Desc   : add executed for the order
+@Arg    : session: session of database conn, amount: executed amount, 
+          price: executed price, order_id: trans_id, time: executed time
+@Return : void
+'''
 def addExecuted(session, amount, price, order_id, time):
     newExe = Executed(order_id = order_id, price = price, amount = amount, time = time)
     session.add(newExe)
     session.commit()
-    
-    
+
+
+def CancelOrder(session, id, res):
+    Order_exists = session.query(Order).filter_by(
+        tran_id=id).scalar() is not None
+    if Order_exists:
+        order = session.query(Order).filter_by(
+            tran_id=id).first()
+        if order.status == StatusEnum.open:
+            # change the status to cancel and refund immediately
+            order.status = "canceled"
+            # refund money to account
+            if order.limit_price >= 0:
+                # calculate the money that need to refund
+                refund_money = order.limit_price * order.remain_amount
+                modifyBalance(session, order.account_id, refund_money)
+
+            # refund stock to position
+            else:
+                refund_amount = order.remain_amount
+                modifyPosition(session, order.symbol,
+                               order.account_id, refund_amount)
+
+            # once done refund and status change, update response
+            under_cancel = ET.SubElement(res, 'canceled', {'id': str(id)})
+            # get all new status of this order
+            # first load cancel status
+            ET.SubElement(under_cancel, 'canceled', {
+                          'shares': str(order.remain_amount), 'time': str(order.time)})
+            all_excuted = session.query(Executed).filter_by(
+                order_id=id).all()
+            for execute in all_excuted:
+                ET.SubElement(under_cancel, 'executed', {
+                    'shares': str(execute.amount), 'price': str(execute.price), 'time': str(execute.time)})
+
+            session.commit()
+
+        elif order.status == StatusEnum.executed:
+            # deal with error cannot cancel a executed order
+            error = ET.SubElement(res, 'error', {'id': str(id)})
+            error.text = "order has been all executed, cannot be canceled"
+
+        else:
+            print(order.status)
+            error = ET.SubElement(res, 'error', {'id': str(id)})
+            error.text = "order has been canceled already, cannot be canceled again"
+    else:
+        error = ET.SubElement(res, 'error', {'id': str(id)})
+        error.text = "order doesnot exists, please type in correct transaction id"
+
+
+def QueryOrder(session, id, res):
+    Order_exists = session.query(Order).filter_by(
+        tran_id=id).scalar() is not None
+    under_status = ET.SubElement(res, 'status', {'id': str(id)})
+    all_excuted = session.query(Executed).filter_by(
+        order_id=id)
+    order = session.query(Order).filter_by(tran_id=id).first()
+    if Order_exists:
+        if order.status == StatusEnum.open:
+            ET.SubElement(under_status, 'open', {
+                'shares': str(order.remain_amount)})
+
+        if order.status == StatusEnum.canceled:
+            ET.SubElement(under_status, 'canceled', {
+                'shares': str(order.remain_amount), 'time': str(order.time)})
+        for execute in all_excuted:
+            ET.SubElement(under_status, 'executed', {
+                'shares': str(execute.amount), 'price': str(execute.price), 'time': str(execute.time)})
+    else:
+        error = ET.SubElement(res, 'error', {'id': str(id)})
+        error.text = "order doesnot exists, please type in correct transaction id"
+
+
+'''
+@Desc   : combination test of the orderUtils class
+@Arg    : void
+@Return : void
+'''
 if __name__ == "__main__":
     engine = initDB()
     dropAllTable(engine)
