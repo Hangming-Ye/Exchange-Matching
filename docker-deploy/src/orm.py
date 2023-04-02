@@ -11,7 +11,7 @@ class StatusEnum(enum.Enum):
 
 class Account(Base):
     __tablename__ = 'account'
-    account_id = Column(Integer, Sequence('account_id_seq'), primary_key = True)
+    account_id = Column(Integer, primary_key = True)
     balance = Column(REAL)
 
     def dto(self):
