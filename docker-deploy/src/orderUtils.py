@@ -46,7 +46,7 @@ def matchOrder(session, od_id):
 
     # matched order find
     if ans != None:
-        return ans[0]
+        return ans
     # no matched order find
     else:
         return -1
@@ -107,7 +107,6 @@ def modifyPosition(session, sym, uid, change):
     if stock == None:
         raise ArgumentError("Position not exist")
     
-    stock = stock[0]
     stock.amount += change
     # position amount insufficient
     if stock.amount < 0:
