@@ -2,7 +2,10 @@ import socket
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import tostring
 from datetime import datetime
+from orderUtils import *
+
 PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
+
 def process_request(fd):
     while (True):
         request = fd.recv()
@@ -62,20 +65,14 @@ def parseXML(request):
                 amount = child.get('amount')
                 limit = child.get('limit')
                 # get current time and pass to time varibale
-                time = datetime.now()
-                # edit Account/Position to deduct money/stock
-                # name function DeductAmount/DeductPosition return true or false indicate if could execute the relevant operation
-                if (DeductAmount(accout_id, sym, limit)):
-                    # now need to connect database and insert this record into Order
-                    # with status 'open'
-                    # name function InsertOrder 
-                    InsertOrder(sym, amount, limit, time, res)
+                try:
+                    od_id = createOrder(session, amount, limit, sym, accout_id)
+                except ArgumentError as e:
+                    createError = ET.SubElement(res, 'error', {'sym': sym, 'amount':str(amount), 'limit':str(limit)})
+                    createError.text = e.msg
                 else:
-                    # deal with error
-                    # let rese include error information
-                    # do something here
-                    print
-
+                    ET.SubElement(res, 'opened', {'sym': sym, 'amount':str(amount), 'limit':str(limit), 'id':str(od_id)})
+                    makeTransaction(session, od_id)
             elif (child.tag == "cancel"):
                 tran_id = child.get('id')
                 # now need to change database table Order to change its' status from open to cancel
