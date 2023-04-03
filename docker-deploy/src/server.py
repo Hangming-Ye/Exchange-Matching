@@ -4,37 +4,43 @@ from xml.etree.ElementTree import tostring
 from datetime import datetime
 from create import *
 from orderUtils import *
-from sqlalchemy import create_engine, inspect
-from sqlalchemy.orm import Session, sessionmaker, declarative_base
-import psycopg2
 from orm import *
+from sqlalchemy.orm import sessionmaker
+import multiprocessing as MP
 
-PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
+Buffer = 2048
 
-def process_request(fd,session):
-    while (True):
-        request = fd.recv(65535)
-        print(request)
-        if (request):
-          
-           
-           
-           res = parseXML(request,session)
-           # xml to string
-           fd.send(tostring(res))
-        else:
-            break
+# 单次请求结束后是否应该关闭连接
+# 每次请求附带的size导致粘包问题
+
+def process_request(fd, engine):
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    request = fd.recv(65535)
+    if (request):
+        res = parseXML(request,session)
+        # xml to string
+        fd.send(tostring(res))
+    fd.close()
+    session.close()
     # receive request from client
 
 
-def server(session):
+def server():
+    engine = initDB()
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((socket.gethostname(), PORT))
     sock.listen()
+
+    pool = MP.Pool(processes=4)
+    fdList = list()
     # act as a server to continue to accept request from client
     while (True):
         fd, addr = sock.accept()
-        process_request(fd,session)
+        fdList.append(fd)
+        pool.apply_async(process_request, (fdList.pop(), engine))
 
 
 # parse xml and call relevant function to deal with <create accout> <create postion> <open order> <cancel order> <query oder>

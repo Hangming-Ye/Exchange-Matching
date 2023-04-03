@@ -12,6 +12,11 @@ def createAllTable(engine):
 def dropAllTable(engine):
     Base.metadata.drop_all(engine)
 
+def getSession(engine):
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    return session
+
 def initDB():
     engine = connectDB()
     insp = inspect(engine)
