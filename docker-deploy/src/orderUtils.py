@@ -39,6 +39,7 @@ def testMtd(session, amount, limit, sym, accout_id):
 '''
 def createOrder(session, amount, price, sym, uid):
     # check user existence
+    
     if session.query(Account).get(uid) is None:
         raise ArgumentError("Account does not exist")
     
@@ -84,7 +85,6 @@ def matchOrder(session, od_id):
         return -1
 
     allOrder = session.query(Order.tran_id).filter(Order.symbol==od.symbol, Order.status==StatusEnum.open)
-
     # buy order
     if od.remain_amount > 0:
         ans = allOrder.filter(Order.limit_price <= od.limit_price, Order.remain_amount < 0).order_by(Order.limit_price, Order.time).first()
@@ -215,7 +215,7 @@ def CancelOrder(session, id, res):
             # change the status to cancel and refund immediately
             order.status = "canceled"
             # refund money to account
-            if order.limit_price >= 0:
+            if order.remain_amount >= 0:
                 # calculate the money that need to refund
                 refund_money = order.limit_price * order.remain_amount
                 modifyBalance(session, order.account_id, refund_money)
@@ -246,7 +246,7 @@ def CancelOrder(session, id, res):
             error.text = "order has been all executed, cannot be canceled"
 
         else:
-            print(order.status)
+           # print(order.status)
             error = ET.SubElement(res, 'error', {'id': str(id)})
             error.text = "order has been canceled already, cannot be canceled again"
     else:

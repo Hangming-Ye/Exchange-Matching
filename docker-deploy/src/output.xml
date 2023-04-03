@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<results>
+<status id="1">
+<open shares="110.0" />
+<executed shares="100.0" price="90.0" time="1680297302" />
+<executed shares="100.0" price="99.0" time="1680297302" />
+<executed shares="100.0" price="103.0" time="1680297302" />
+</status>
+<status id="2">
+<open shares="220.0" />
+<executed shares="300.0" price="230.0" time="1680297302" />
+<executed shares="300.0" price="229.0" time="1680297302" />
+</status>
+<status id="3">
+<open shares="330.0" />
+<executed shares="40.0" price="79.0" time="1680297302" />
+</status>
+<canceled id="1">
+<canceled shares="110.0" time="1680297302" />
+<executed shares="100.0" price="90.0" time="1680297302" />
+<executed shares="100.0" price="99.0" time="1680297302" />
+<executed shares="100.0" price="103.0" time="1680297302" />
+</canceled>
+<canceled id="2">
+<canceled shares="220.0" time="1680297302" />
+<executed shares="300.0" price="230.0" time="1680297302" />
+<executed shares="300.0" price="229.0" time="1680297302" />
+</canceled>
+</results>

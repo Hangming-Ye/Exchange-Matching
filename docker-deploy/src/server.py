@@ -4,14 +4,22 @@ from xml.etree.ElementTree import tostring
 from datetime import datetime
 from create import *
 from orderUtils import *
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.orm import Session, sessionmaker, declarative_base
+import psycopg2
+from orm import *
 
-PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
+PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
 
-def process_request(fd):
+def process_request(fd,session):
     while (True):
-        request = fd.recv()
+        request = fd.recv(65535)
+        print(request)
         if (request):
-           res = parseXML(request)
+          
+           
+           
+           res = parseXML(request,session)
            # xml to string
            fd.send(tostring(res))
         else:
@@ -19,15 +27,14 @@ def process_request(fd):
     # receive request from client
 
 
-def server():
+def server(session):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', PORT))
+    sock.bind((socket.gethostname(), PORT))
     sock.listen()
     # act as a server to continue to accept request from client
     while (True):
         fd, addr = sock.accept()
-
-        process_request(fd)
+        process_request(fd,session)
 
 
 # parse xml and call relevant function to deal with <create accout> <create postion> <open order> <cancel order> <query oder>
@@ -51,7 +58,7 @@ def parseXML(request,session):
                 # deep to child's child to get accout id and num of stock
                 childOfSym = child[0]
                 accout_id = childOfSym.get('id')
-                amount = childOfSym.text
+                amount = int(childOfSym.text)
                 # now need to connect database and insert this record into Position
                 # name function InsertPosition 
                 InsertPosition(session, sym, accout_id, amount, res)
@@ -60,12 +67,12 @@ def parseXML(request,session):
                 # please deal with error
                 print("error here please deal with")
     elif root.tag == "transactions":
-        accout_id = root.get(id)
+        accout_id = root.attrib.get('id')
         for child in root:
             if (child.tag == "order"):
                 sym = child.get('sym')
-                amount = child.get('amount')
-                limit = child.get('limit')
+                amount =  float(child.get('amount'))
+                limit = float(child.get('limit'))
                 # get current time and pass to time varibale
                 try:
                     od_id = createOrder(session, amount, limit, sym, accout_id)
@@ -143,9 +150,18 @@ def test(xml):
                 print("transaction query account_id = " + accout_id + " transaction id " + tran_id )
                 
 if __name__ == "__main__":
-    filename = 'text.xml'
-    f = open(filename, 'rb')
-    xml = f.read(1024)
-    print(xml)
-    test(xml)
+    # filename = 'text.xml'
+    # f = open(filename, 'rb')
+    # xml = f.read(1024)
+    # print(xml)
+    # test(xml)
+    print("hhhhhhhhhi")
+    engine = connectDB()
+    dropAllTable(engine)
+    initDB()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    server(session)
+
+    
 

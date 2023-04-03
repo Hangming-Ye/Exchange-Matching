@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<transactions id="2">
+<order sym="FACEBOOK" amount="900" limit="-1000" />
+<order sym="TESLA" amount="1000" limit="967.3" />
+<order sym="GOOGLE" amount="200" limit="1290" />
+<query id="101" />
+<query id="90" />
+<query id="8" />
+<query id="7" />
+<cancel id="10" />
+<cancel id="20" />
+<cancel id="30" />
+</transactions>

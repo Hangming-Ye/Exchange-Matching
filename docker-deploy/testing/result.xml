@@ -1,0 +1,20 @@
+#test 1
+<results><created id="1" /><created sym="ETC" id="1" /><created sym="APPLE" id="1" /></results>
+<results><created id="2" /><created sym="ETC" id="2" /><created sym="APPLE" id="2" /></results>
+<results><opened sym="ETC" amount="-100.0" limit="100.0" id="1" /><opened sym="GOOGLE" amount="100.0" limit="100.0" id="2" /><status id="1"><open shares="-100.0" /></status><canceled id="2"><canceled shares="100.0" time="1680477437" /></canceled></results>
+<results><opened sym="ETC" amount="100.0" limit="100.0" id="3" /><status id="3"><executed shares="100.0" price="100.0" time="1680477437" /></status></results>
+#test 2
+<results><created id="3" /><created sym="ETC" id="3" /><created sym="APPLE" id="3" /></results>'
+<results><created id="4" /><created sym="ETC" id="4" /><created sym="APPLE" id="4" /></results>'
+<results><opened sym="ETC" amount="-50.0" limit="100.0" id="4" /><status id="4"><open shares="-50.0" /></status></results>'
+<results><opened sym="ETC" amount="100.0" limit="120.0" id="5" /><status id="5"><open shares="50.0" /><executed shares="50.0" price="100.0" time="1680478229" /></status><canceled id="5"><canceled shares="50.0" time="1680478229" /><executed shares="50.0" price="100.0" time="1680478229" /></canceled></results>
+#test 3
+b'<results><created id="5" /><created sym="APPLE" id="5" /></results>'
+b'<results><created id="6" /><created sym="APPLE" id="6" /></results>'
+b'<results><opened sym="APPLE" amount="-200.0" limit="128.0" id="6" /><status id="6"><open shares="-200.0" /></status></results>'
+b'<results><opened sym="APPLE" amount="-100.0" limit="129.0" id="7" /><status id="7"><open shares="-100.0" /></status></results>'
+b'<results><opened sym="APPLE" amount="100.0" limit="129.0" id="8" /><status id="8"><executed shares="100.0" price="128.0" time="1680480847" /></status></results>'
+b'<results><opened sym="APPLE" amount="100.0" limit="130.0" id="9" /><status id="9"><executed shares="100.0" price="128.0" time="1680480847" /></status></results>'
+b'<results><opened sym="APPLE" amount="100.0" limit="131.0" id="10" /><status id="10"><executed shares="100.0" price="129.0" time="1680480847" /></status></results>'
+b'<results><status id="6"><executed shares="100.0" price="128.0" time="1680480847" /><executed shares="100.0" price="128.0" time="1680480847" /></status></results>'
+b'<results><status id="7"><executed shares="100.0" price="129.0" time="1680480847" /></status></results>'

@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<create>
+<account id="1" balance="100" />
+<symbol sym="ETC">
+<account id="1">100</account>
+</symbol>
+<symbol sym="APPLE">
+<account id="1">300</account>
+</symbol>
+<symbol sym="HTC">
+<account id="1">400</account>
+</symbol>
+<symbol sym="META">
+<account id="1">800</account>
+</symbol>
+</create>
