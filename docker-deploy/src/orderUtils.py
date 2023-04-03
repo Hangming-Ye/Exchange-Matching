@@ -30,6 +30,7 @@ def testMtd(session, amount, limit, sym, accout_id):
     tree = ET.ElementTree(res)
     tree.write(str(accout_id)+".xml",xml_declaration=True,encoding='UTF-8')
 
+
 '''
 @Desc   : create the transaction and block transaction resources
 @Arg    : session: session of database conn, amount: transaction amount, 
@@ -56,6 +57,7 @@ def createOrder(session, amount, price, sym, uid):
     session.commit()
     return order.tran_id
 
+
 '''
 @Desc   : make transaction of specific order until no suitbale order or transaction is executed
 @Arg    : session: session of database conn, od_id: id of the transaction
@@ -66,6 +68,7 @@ def makeTransaction(session, od_id):
     while match_id != -1:
         executeOrder(session, od_id, match_id)
         match_id = matchOrder(session, od_id)
+
 
 '''
 @Desc   : find the match order which 
@@ -99,8 +102,9 @@ def matchOrder(session, od_id):
     else:
         return -1
 
+
 '''
-@Desc   : excute the 2 transaction by   
+@Desc   : excute the 2 transactions by   
             1. determine executed price
             2. modify the position of two account
             3. modify order amount and status if needed
@@ -165,6 +169,7 @@ def modifyBalance(session, uid, change):
         raise ArgumentError('Insufficient Balance')
     
     session.commit()
+
 
 '''
 @Desc   : modify the sym position of account by specifioc change
@@ -289,10 +294,10 @@ if __name__ == "__main__":
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
 
-    user1 = Account(balance = 100000)
-    user2 = Account(balance = 300000)
-    user3 = Account(balance = 0)
-    user4 = Account(balance = 0)
+    user1 = Account(account_id = 1, balance = 100000)
+    user2 = Account(account_id = 2, balance = 300000)
+    user3 = Account(account_id = 3, balance = 0)
+    user4 = Account(account_id = 4, balance = 0)
     session.add(user1)
     session.add(user2)
     session.add(user3)
