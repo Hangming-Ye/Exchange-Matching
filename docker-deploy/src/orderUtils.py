@@ -115,8 +115,8 @@ def matchOrder(session, od_id):
 @Return : void
 '''
 def executeOrder(session, new_id, old_id):
-    new = session.query(Order).filter(Order.tran_id == new_id).with_for_update().one()
-    old = session.query(Order).filter(Order.tran_id == old_id).with_for_update().one()
+    new = session.query(Order).filter_by(tran_id = new_id).with_for_update().one()
+    old = session.query(Order).filter_by(tran_id = old_id).with_for_update().one()
 
     #determine sell and buy
     if new.remain_amount > 0:
@@ -164,7 +164,7 @@ def executeOrder(session, new_id, old_id):
 '''
 def modifyBalance(session, uid, change):
     # row level lock by using with with_for_update method in sqlAlchemy
-    user = session.query(Account).filter(Account.account_id == uid).with_for_update().one()
+    user = session.query(Account).filter_by(account_id = uid).with_for_update().one()
     if user == None:
         raise ArgumentError('User not exist')
     
@@ -183,7 +183,7 @@ def modifyBalance(session, uid, change):
 @Excep  : Position not exist, Insufficient Share Amount
 '''
 def modifyPosition(session, sym, uid, change):
-    stock = session.query(Position).filter(Position.account_id == uid, Position.symbol == sym).with_for_update().first()
+    stock = session.query(Position).filter_by(account_id = uid, symbol = sym).with_for_update().first()
     # position not find
     if stock == None:
         if change < 0:
