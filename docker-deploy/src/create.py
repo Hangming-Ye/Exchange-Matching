@@ -38,9 +38,18 @@ def InsertPosition(session, sym, id, amount, res):
         else:
             if Position_exists:
                 # just update relevant amount
-                position = session.query(Position).filter_by(
-                    account_id=id, symbol=sym).first()
+                # position = session.query(Position).filter_by(
+                #     account_id=id, symbol=sym).first()
+                # position.amount += amount
+                # read write solution
+                # One way to prevent that is to not read and change the value directly with the column value. Given read is not super necessary in this scenario.
+                # session.query(Position).filter_by(account_id=id, symbol=sym).first().update(
+                #     {"amount": Position.amount + amount})
+                position = session.query(Position).filter_by(account_id=id, symbol=sym).with_for_update().first()
                 position.amount += amount
+                session.commit()
+
+
                 session.commit()
             else:
                 new_position = Position(
@@ -148,7 +157,7 @@ if __name__ == "__main__":
     print("account 1 's balance should be 2000+110*330=38300 ")
     print("database show " + str(account1.balance))
     account2 = session.query(Position).filter_by(
-           account_id=2).all()
+        account_id=2).all()
     for pos in account2:
         print(pos.symbol, " ", pos.amount)
     # create the ElementTree object
@@ -156,6 +165,5 @@ if __name__ == "__main__":
 
     # write the tree to a file
     print(tostring(res))
-    tree.write("/home/ht175/ECE568/Exchange-Matching/docker-deploy/src/output.xml",xml_declaration=True,encoding='UTF-8')
-
-        
+    tree.write("/home/ht175/ECE568/Exchange-Matching/docker-deploy/src/output.xml",
+               xml_declaration=True, encoding='UTF-8')
