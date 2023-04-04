@@ -115,8 +115,8 @@ def matchOrder(session, od_id):
 @Return : void
 '''
 def executeOrder(session, new_id, old_id):
-    new = session.query(Order).filter_by(id=new_id).with_for_update().one()
-    old = session.query(Order).filter_by(id=old_id).with_for_update().one()
+    new = session.query(Order).filter(Order.tran_id == new_id).with_for_update().one()
+    old = session.query(Order).filter(Order.tran_id == old_id).with_for_update().one()
 
     #determine sell and buy
     if new.remain_amount > 0:
@@ -163,9 +163,8 @@ def executeOrder(session, new_id, old_id):
 @Excep  : User not exist, Insufficient Balance
 '''
 def modifyBalance(session, uid, change):
-    # user = session.query(Account).get(uid)
     # row level lock by using with with_for_update method in sqlAlchemy
-    user = session.query(Account).filter(Account.id == uid).with_for_update().one()
+    user = session.query(Account).filter(Account.account_id == uid).with_for_update().one()
     if user == None:
         raise ArgumentError('User not exist')
     
