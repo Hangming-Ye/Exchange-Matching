@@ -4,6 +4,7 @@ from sqlalchemy.orm import query, Session, sessionmaker
 from myException import *
 import time
 from xml.etree.ElementTree import tostring
+from sqlalchemy.orm.exc import NoResultFound
 import xml.etree.ElementTree as ET
 # 预扣款问题
 # 自己创建的order自己应该不能搜索到吧？
@@ -115,8 +116,8 @@ def matchOrder(session, od_id):
 @Return : void
 '''
 def executeOrder(session, new_id, old_id):
-    new = session.query(Order).get(new_id)
-    old = session.query(Order).get(old_id)
+    new = session.query(Order).filter_by(id=new_id).with_for_update().one()
+    old = session.query(Order).filter_by(id=old_id).with_for_update().one()
 
     #determine sell and buy
     if new.remain_amount > 0:
@@ -138,11 +139,14 @@ def executeOrder(session, new_id, old_id):
     buy.remain_amount -= exe_amount
     if buy.remain_amount == 0:
         buy.status = StatusEnum.executed
-    session.commit()
+    # session.commit()
 
     sell.remain_amount += exe_amount
     if sell.remain_amount == 0:
         sell.status = StatusEnum.executed
+    # session.commit()
+    # Commit the changes in one go
+    session.add_all([buy, sell])
     session.commit()
 
     addExecuted(session, exe_amount, price, buy.tran_id, exeTime)
@@ -160,7 +164,9 @@ def executeOrder(session, new_id, old_id):
 @Excep  : User not exist, Insufficient Balance
 '''
 def modifyBalance(session, uid, change):
-    user = session.query(Account).get(uid)
+    # user = session.query(Account).get(uid)
+    # row level lock by using with with_for_update method in sqlAlchemy
+    user = session.query(Account).filter(Account.id == uid).with_for_update().one()
     if user == None:
         raise ArgumentError('User not exist')
     
@@ -172,14 +178,14 @@ def modifyBalance(session, uid, change):
 
 
 '''
-@Desc   : modify the sym position of account by specifioc change
+@Desc   : modify the sym position of account by specific change
 @Arg    : session: database session conn, sym: symbol want to change, 
-          uid: account_id want to modify, change: modify amount(+ for add, - for minus)
+          uid: account_id want to modify, change: modify amount (+ for add, - for minus)
 @Return : void
 @Excep  : Position not exist, Insufficient Share Amount
 '''
 def modifyPosition(session, sym, uid, change):
-    stock = session.query(Position).filter(Position.account_id == uid, Position.symbol == sym).first()
+    stock = session.query(Position).filter(Position.account_id == uid, Position.symbol == sym).with_for_update().first()
     # position not find
     if stock == None:
         if change < 0:
@@ -194,7 +200,7 @@ def modifyPosition(session, sym, uid, change):
     # position amount insufficient
     if stock.amount < 0:
         raise ArgumentError('Insufficient Share Amount')
-    
+    session.merge(stock)
     session.commit()
 
 
@@ -211,52 +217,94 @@ def addExecuted(session, amount, price, order_id, time):
 
 
 def CancelOrder(session, id, res):
-    Order_exists = session.query(Order).filter_by(
-        tran_id=id).scalar() is not None
-    if Order_exists:
-        order = session.query(Order).filter_by(
-            tran_id=id).first()
+    res = ET.Element('result')
+    try:
+        # Query the order with row locking
+        order = session.query(Order).filter_by(tran_id=id).with_for_update().one()
+
         if order.status == StatusEnum.open:
-            # change the status to cancel and refund immediately
-            order.status = "canceled"
-            # refund money to account
+            # Change the status to canceled and refund immediately
+            order.status = StatusEnum.canceled
+
             if order.remain_amount >= 0:
-                # calculate the money that need to refund
+                # Refund money to account
                 refund_money = order.limit_price * order.remain_amount
                 modifyBalance(session, order.account_id, refund_money)
-
-            # refund stock to position
             else:
+                # Refund stock to position
                 refund_amount = order.remain_amount
-                modifyPosition(session, order.symbol,
-                               order.account_id, refund_amount)
+                modifyPosition(session, order.symbol, order.account_id, refund_amount)
 
-            # once done refund and status change, update response
+            # Update the response with the new status of the order
             under_cancel = ET.SubElement(res, 'canceled', {'id': str(id)})
-            # get all new status of this order
-            # first load cancel status
-            ET.SubElement(under_cancel, 'canceled', {
-                          'shares': str(order.remain_amount), 'time': str(order.time)})
-            all_excuted = session.query(Executed).filter_by(
-                order_id=id).all()
-            for execute in all_excuted:
-                ET.SubElement(under_cancel, 'executed', {
-                    'shares': str(execute.amount), 'price': str(execute.price), 'time': str(execute.time)})
+            ET.SubElement(under_cancel, 'canceled', {'shares': str(order.remain_amount), 'time': str(order.time)})
+            all_executed = session.query(Executed).filter_by(order_id=id).all()
+            for execute in all_executed:
+                ET.SubElement(under_cancel, 'executed', {'shares': str(execute.amount), 'price': str(execute.price), 'time': str(execute.time)})
 
             session.commit()
-
         elif order.status == StatusEnum.executed:
-            # deal with error cannot cancel a executed order
+            # Deal with error: cannot cancel an executed order
             error = ET.SubElement(res, 'error', {'id': str(id)})
             error.text = "order has been all executed, cannot be canceled"
-
         else:
-           # print(order.status)
+            # Deal with error: order has been canceled already
             error = ET.SubElement(res, 'error', {'id': str(id)})
             error.text = "order has been canceled already, cannot be canceled again"
-    else:
+    except NoResultFound:
+        # Deal with error: order does not exist
         error = ET.SubElement(res, 'error', {'id': str(id)})
-        error.text = "order doesnot exists, please type in correct transaction id"
+        error.text = "order does not exist, please type in the correct transaction id"
+    except Exception as e:
+        # Rollback changes if an error occurs
+        session.rollback()
+        raise e
+    # Order_exists = session.query(Order).filter_by(
+    #     tran_id=id).scalar() is not None
+    # if Order_exists:
+    #     order = session.query(Order).filter_by(
+    #         tran_id=id).first()
+    #     if order.status == StatusEnum.open:
+    #         # change the status to cancel and refund immediately
+    #         order.status = "canceled"
+    #         # refund money to account
+    #         if order.remain_amount >= 0:
+    #             # calculate the money that need to refund
+    #             refund_money = order.limit_price * order.remain_amount
+    #             modifyBalance(session, order.account_id, refund_money)
+
+    #         # refund stock to position
+    #         else:
+    #             refund_amount = order.remain_amount
+    #             modifyPosition(session, order.symbol,
+    #                            order.account_id, refund_amount)
+
+    #         # once done refund and status change, update response
+    #         under_cancel = ET.SubElement(res, 'canceled', {'id': str(id)})
+    #         # get all new status of this order
+    #         # first load cancel status
+    #         ET.SubElement(under_cancel, 'canceled', {
+    #                       'shares': str(order.remain_amount), 'time': str(order.time)})
+    #         all_excuted = session.query(Executed).filter_by(
+    #             order_id=id).all()
+    #         for execute in all_excuted:
+    #             ET.SubElement(under_cancel, 'executed', {
+    #                 'shares': str(execute.amount), 'price': str(execute.price), 'time': str(execute.time)})
+
+    #         session.commit()
+
+    #     elif order.status == StatusEnum.executed:
+    #         # deal with error cannot cancel a executed order
+    #         error = ET.SubElement(res, 'error', {'id': str(id)})
+    #         error.text = "order has been all executed, cannot be canceled"
+
+    #     else:
+    #        # print(order.status)
+    #         error = ET.SubElement(res, 'error', {'id': str(id)})
+    #         error.text = "order has been canceled already, cannot be canceled again"
+    # else:
+    #     error = ET.SubElement(res, 'error', {'id': str(id)})
+    #     error.text = "order doesnot exists, please type in correct transaction id"
 
 
 def QueryOrder(session, id, res):
