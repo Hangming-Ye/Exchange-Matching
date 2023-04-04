@@ -17,17 +17,15 @@ BUFFERSIZE = 2048
 def process_request(fd, engine):
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
-
-    size = recvSize(fd)
-    while size != -1:
-        request = recvXML(fd, size)
-        if request is not None:
+    while True:
+        try:
+            request = recvXML(fd)
             res = parseXML(request, session)
             # xml to string
             fd.send(tostring(res))
+        except socket.error:
+            break
     fd.close()
-
-
     session.close()
     # receive request from client
 
@@ -41,24 +39,6 @@ def recvXML(fd):
         size -= BUFFERSIZE
     request += fd.recv(size)
     return request
-
-
-
-def recvSize(fd):
-    chr = ''
-    numStr = ''
-    chr = fd.recv(1)
-    if chr is None:
-        return -1
-    chr = chr.decode('utf-8')
-    while chr != '\n':
-        numStr += str(chr)
-        chr = fd.recv(1)
-        if chr is None:
-            return -1
-        chr = chr.decode('utf-8')
-    return int(numStr)
-
 
 
 def server():
