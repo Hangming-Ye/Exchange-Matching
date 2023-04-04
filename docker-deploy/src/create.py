@@ -41,9 +41,14 @@ def InsertPosition(session, sym, id, amount, res):
                 # position = session.query(Position).filter_by(
                 #     account_id=id, symbol=sym).first()
                 # position.amount += amount
-                # concurency deal
-                session.query(Position).filter_by(account_id=id, symbol=sym).first().update(
-                    {"amount": Account.amount + 100})
+                # read write solution
+                # One way to prevent that is to not read and change the value directly with the column value. Given read is not super necessary in this scenario.
+                # session.query(Position).filter_by(account_id=id, symbol=sym).first().update(
+                #     {"amount": Position.amount + amount})
+                position = session.query(Position).filter_by(account_id=id, symbol=sym).with_for_update().first()
+                position.amount += amount
+                session.commit()
+
 
                 session.commit()
             else:
