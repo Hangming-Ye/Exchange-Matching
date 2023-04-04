@@ -1,4 +1,4 @@
-import socket
+import socket, struct
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import tostring
 from datetime import datetime
@@ -9,22 +9,56 @@ from sqlalchemy.orm import sessionmaker
 import multiprocessing as MP
 
 PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
-Buffer = 2048
+BUFFERSIZE = 2048
 
 # 单次请求结束后是否应该关闭连接
-# 每次请求附带的size导致粘包问题
+# 客户端是否会主动结束连接
 
 def process_request(fd, engine):
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
-    request = fd.recv(65535)
-    if (request):
-        res = parseXML(request,session)
-        # xml to string
-        fd.send(tostring(res))
+
+    size = recvSize(fd)
+    while size != -1:
+        request = recvXML(fd, size)
+        if request is not None:
+            res = parseXML(request, session)
+            # xml to string
+            fd.send(tostring(res))
     fd.close()
+
+
     session.close()
     # receive request from client
+
+def recvXML(fd):
+    struSize = fd.recv(4)
+    size = struct.unpack("i", struSize)[0]
+
+    request = ""
+    while size > BUFFERSIZE:
+        request += fd.recv(BUFFERSIZE)
+        size -= BUFFERSIZE
+    request += fd.recv(size)
+    return request
+
+
+
+def recvSize(fd):
+    chr = ''
+    numStr = ''
+    chr = fd.recv(1)
+    if chr is None:
+        return -1
+    chr = chr.decode('utf-8')
+    while chr != '\n':
+        numStr += str(chr)
+        chr = fd.recv(1)
+        if chr is None:
+            return -1
+        chr = chr.decode('utf-8')
+    return int(numStr)
+
 
 
 def server():
@@ -40,7 +74,7 @@ def server():
     while (True):
         fd, addr = sock.accept()
         fdList.append(fd)
-        pool.apply_async(process_request, (fdList.pop(), engine))
+        pool.apply_async(process_request, (fdList.pop(0), engine))
 
 
 # parse xml and call relevant function to deal with <create accout> <create postion> <open order> <cancel order> <query oder>

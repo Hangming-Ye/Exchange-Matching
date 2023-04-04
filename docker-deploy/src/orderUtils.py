@@ -5,10 +5,9 @@ from myException import *
 import time
 from xml.etree.ElementTree import tostring
 import xml.etree.ElementTree as ET
-# 预扣款问题
+
 # 自己创建的order自己应该不能搜索到吧？
-# amount 为啥允许小数？
-# 部分交易的时候， 如果buyer成交价格低于预付的价格，应当直接退款还是等到整个订单完成之后统一退款
+
 
 '''
 @Desc   : unit test function for transaction
