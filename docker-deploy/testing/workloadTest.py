@@ -10,19 +10,18 @@ def clientInit(id):
 
 def conn():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
+    sock.connect((socket.gethostname(), PORT))
     return sock
 
 def sendXML(sock, xml):
-    msg = xml.encode('utf-8')
-    size = struct.pack("i", len(msg))
+    size = struct.pack("i", len(xml))
 
     sock.send(size)
-    sock.send(msg)
+    sock.send(xml)
 
 def hybridTestOdd(id, sock):
     xml = createRequestGenerator({"id": id, "balance": 10000}, [])
-    sendXML(sock, xml)
+    sendXML(sock, tostring(xml))
     resp = sock.recv(65535)
     sock.close()
     print(resp)
@@ -31,7 +30,7 @@ def hybridTestEven(id, sock):
     xml = createRequestGenerator({"id": id, "balance": 0}, [
         {"id": id, "symbol": "BTC", "num": 100}
     ])
-    sendXML(sock, xml)
+    sendXML(sock, tostring(xml))
     resp = sock.recv(65535)
     sock.close()
     print(resp)
@@ -42,5 +41,5 @@ def test(num):
         t.start()
 
 if __name__ == "__main__":
-    test(1)
+    test(10)
 
