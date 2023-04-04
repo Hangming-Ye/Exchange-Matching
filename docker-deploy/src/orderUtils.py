@@ -28,7 +28,7 @@ def testMtd(session, amount, limit, sym, accout_id):
         makeTransaction(session, od_id)
     print(tostring(res))
     tree = ET.ElementTree(res)
-    tree.write(str(accout_id)+".xml",xml_declaration=True,encoding='UTF-8')
+    #tree.write(str(accout_id)+".xml",xml_declaration=True,encoding='UTF-8')
 
 
 '''
@@ -94,10 +94,9 @@ def matchOrder(session, od_id):
     # sell order
     elif od.remain_amount < 0:
         ans = allOrder.filter(Order.limit_price >= od.limit_price, Order.remain_amount > 0).order_by(Order.limit_price.desc(), Order.time).first()
-
     # matched order find
     if ans != None:
-        return ans
+        return ans[0]
     # no matched order find
     else:
         return -1
@@ -115,8 +114,8 @@ def matchOrder(session, od_id):
 @Return : void
 '''
 def executeOrder(session, new_id, old_id):
-    new = session.query(Order).filter_by(tran_id = new_id).with_for_update().one()
-    old = session.query(Order).filter_by(tran_id = old_id).with_for_update().one()
+    new = session.query(Order).with_for_update(of=Order).filter_by(tran_id = new_id).first()
+    old = session.query(Order).with_for_update(of=Order).filter_by(tran_id = old_id).first()
 
     #determine sell and buy
     if new.remain_amount > 0:
