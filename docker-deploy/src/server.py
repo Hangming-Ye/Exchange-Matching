@@ -43,7 +43,7 @@ def recvXML(fd):
     if tmp == "":
         return None
     request += tmp
-    return request
+    return request.decode("utf-8")
 
 
 def server():
