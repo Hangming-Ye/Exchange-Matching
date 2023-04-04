@@ -52,7 +52,7 @@ def server():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((socket.gethostname(), PORT))
     sock.listen()
-
+    print("----Start Listen at----")
     pool = MP.Pool(processes=4)
     fdList = list()
     # act as a server to continue to accept request from client
@@ -181,12 +181,7 @@ if __name__ == "__main__":
     # print(xml)
     # test(xml)
     print("hhhhhhhhhi")
-    engine = connectDB()
-    dropAllTable(engine)
-    initDB()
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
-    server(session)
+    server()
 
     
 
