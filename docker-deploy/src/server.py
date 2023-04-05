@@ -1,4 +1,5 @@
-import socket, struct
+import socket
+import struct
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import tostring
 from datetime import datetime
@@ -8,10 +9,11 @@ from orm import *
 from sqlalchemy.orm import sessionmaker
 import multiprocessing as MP
 import sys
-PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
+PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
 BUFFERSIZE = 2048
 # 单次请求结束后是否应该关闭连接
 # 客户端是否会主动结束连接
+
 
 def process_request(fd, engine):
     print("start processing request ")
@@ -24,6 +26,7 @@ def process_request(fd, engine):
     fd.close()
     session.close()
     # receive request from client
+
 
 def recvXML(fd):
     struSize = fd.recv(4)
@@ -38,6 +41,8 @@ def recvXML(fd):
 
 
 def server():
+    engine = connectDB()
+    dropAllTable(engine)
     engine = initDB()
     index = 1
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -58,7 +63,7 @@ def server():
 
 # parse xml and call relevant function to deal with <create accout> <create postion> <open order> <cancel order> <query oder>
 # return response xml
-def parseXML(request,session):
+def parseXML(request, session):
     root = ET.fromstring(request)
     res = ET.Element('results')
     # first divide to two workflow: create/transaction
@@ -68,9 +73,8 @@ def parseXML(request,session):
                 accout_id = child.get('id')
                 balance = child.get('balance')
                 # now need to connect to database and insert this record into Account
-                # name function InsertAccount 
+                # name function InsertAccount
                 InsertAccount(session, accout_id, balance, res)
-              
 
             elif (child.tag == "symbol"):
                 sym = child.get('sym')
@@ -79,44 +83,72 @@ def parseXML(request,session):
                 accout_id = childOfSym.get('id')
                 amount = int(childOfSym.text)
                 # now need to connect database and insert this record into Position
-                # name function InsertPosition 
+                # name function InsertPosition
                 InsertPosition(session, sym, accout_id, amount, res)
-              
+
             else:
                 # please deal with error
                 print("error here please deal with")
     elif root.tag == "transactions":
         accout_id = root.attrib.get('id')
+        account_exists = checkAccount(session, accout_id)
         for child in root:
             if (child.tag == "order"):
                 sym = child.get('sym')
-                amount =  float(child.get('amount'))
+                amount = float(child.get('amount'))
                 limit = float(child.get('limit'))
+                if account_exists:
                 # get current time and pass to time varibale
-                try:
-                    od_id = createOrder(session, amount, limit, sym, accout_id)
-                except ArgumentError as e:
-                    createError = ET.SubElement(res, 'error', {'sym': sym, 'amount':str(amount), 'limit':str(limit)})
-                    createError.text = e.msg
+                    try:
+                        od_id = createOrder(
+                            session, amount, limit, sym, accout_id)
+                    except ArgumentError as e:
+                        createError = ET.SubElement(
+                            res, 'error', {'sym': sym, 'amount': str(amount), 'limit': str(limit)})
+                        createError.text = e.msg
+                    else:
+                        ET.SubElement(res, 'opened', {'sym': sym, 'amount': str(
+                            amount), 'limit': str(limit), 'id': str(od_id)})
+                        makeTransaction(session, od_id)
                 else:
-                    ET.SubElement(res, 'opened', {'sym': sym, 'amount':str(amount), 'limit':str(limit), 'id':str(od_id)})
-                    makeTransaction(session, od_id)
+                    createError = ET.SubElement(
+                            res, 'error', {'sym': sym, 'amount': str(amount), 'limit': str(limit)})
+                    createError.text = "invaild account: account does not exists"
+
+
             elif (child.tag == "cancel"):
                 tran_id = child.get('id')
-                # now need to change database table Order to change its' status from open to cancel
-                # name function CancelOrder 
-                CancelOrder(session, tran_id, res)
+                
+                if account_exists:
+                    print("cancellllllllllllllllllllllll")
+                    
+                    # now need to change database table Order to change its' status from open to cancel
+                    # name function CancelOrder
+                    CancelOrder(session, tran_id, res)
+                else:
+                    error = ET.SubElement(res, 'error', {'id': str(tran_id)})
+                    error.text = "invaild account: account does not exists"
+
+                
 
             elif (child.tag == "query"):
                 tran_id = child.get('id')
-                # now need to query table Order and Executed to get all records
-                # name function QueryOrder 
-                QueryOrder(session, tran_id, res)
+                if account_exists:
+                    
+                    # now need to query table Order and Executed to get all record
+                    # name function QueryOrder
+                    QueryOrder(session, tran_id, res)
+                else:
+                    error = ET.SubElement(res, 'error', {'id': str(tran_id)})
+                    error.text = "invaild account: account does not exists"
+
 
             else:
-                print("please deal with error here")
+                error = ET.SubElement(res, 'error', {'id': str(id)})
+                error.text = "invaild tag in transaction"
     else:
-        print("please deal with error here")
+        error = ET.SubElement(res, 'error', {'id': str(id)})
+        error.text = "invaild tag in transaction/create"
     return res
 
 
@@ -130,7 +162,8 @@ def test(xml):
                 balance = child.get('balance')
                 # now need to connect to database and insert this record into Account
                 # name function InsertAccount return a string with a format of xml
-                print("create account id = " + accout_id + " balance = " +balance)
+                print("create account id = " +
+                      accout_id + " balance = " + balance)
 
             elif (child.tag == "symbol"):
                 sym = child.get('sym')
@@ -140,7 +173,7 @@ def test(xml):
                 amount = childOfSym.text
                 # now need to connect database and insert this record into Position
                 # name function InsertPosition return a string with a format of xml
-                print("create symbol id = " + accout_id + " amount = " +amount)
+                print("create symbol id = " + accout_id + " amount = " + amount)
 
     elif root.tag == "transactions":
         accout_id = root.attrib.get('id')
@@ -157,17 +190,20 @@ def test(xml):
                 time = datetime.now()
                 # edit Account/Position to deduct money/stock
                 # name function DeductAmount/DeductPosition return true or false indicate if could execute the relevant operation
-                print("transaction order account_id = " + accout_id + " sym = " + sym + " amount = " +amount + " limit " + limit)
+                print("transaction order account_id = " + accout_id +
+                      " sym = " + sym + " amount = " + amount + " limit " + limit)
 
             elif (child.tag == "cancel"):
                 tran_id = child.get('id')
-                print("transaction cancel account_id = " + accout_id + " transaction id " + tran_id )
-            
+                print("transaction cancel account_id = " +
+                      accout_id + " transaction id " + tran_id)
 
             elif (child.tag == "query"):
                 tran_id = child.get('id')
-                print("transaction query account_id = " + accout_id + " transaction id " + tran_id )
-                
+                print("transaction query account_id = " +
+                      accout_id + " transaction id " + tran_id)
+
+
 if __name__ == "__main__":
     # filename = 'text.xml'
     # f = open(filename, 'rb')
@@ -176,6 +212,3 @@ if __name__ == "__main__":
     # test(xml)
     print("hhhhhhhhhi")
     server()
-
-    
-

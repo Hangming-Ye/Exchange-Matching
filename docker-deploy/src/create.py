@@ -56,7 +56,7 @@ def InsertPosition(session, sym, id, amount, res):
                     account_id=id, amount=amount, symbol=sym)
                 session.add(new_position)
                 session.commit()
-        ET.SubElement(res, 'created', {'sym': sym, 'id': str(id)})
+            ET.SubElement(res, 'created', {'sym': sym, 'id': str(id)})
 
 
 def Naive_InsertAcc(session, id, in_balance):

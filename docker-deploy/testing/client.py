@@ -1,6 +1,7 @@
 import socket
 import sys
 from xml_request_generator import *
+from workloadTest import *
 
 def sendCreate(new_account, position_list):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -9,7 +10,8 @@ def sendCreate(new_account, position_list):
     sock.connect((host, port))
     create_requets = createRequestGenerator(new_account, position_list)
     print(tostring(create_requets))
-    sock.send(tostring(create_requets))
+    # sock.send(tostring(create_requets))
+    sendXML(sock,tostring(create_requets))
     data = sock.recv(65535)
     print(data)
 
@@ -20,7 +22,8 @@ def sendTransaction(account_id, order_list, query_list, cancel_list):
     sock.connect((host, port))
     create_requets = TransRequestGenerator(account_id, order_list, query_list, cancel_list)
     print(tostring(create_requets))
-    sock.send(tostring(create_requets))
+    # sock.send(tostring(create_requets))
+    sendXML(sock,tostring(create_requets))
     data = sock.recv(65535)
     print(data)
 
@@ -42,6 +45,7 @@ def test1():
         {"symbol":"ETC", "amount":100, "limit":100}, #transid=3
         
     ],[3],[])
+    
 
 # test partial execute
 def test2():
@@ -117,6 +121,62 @@ sell
 128 100
 129 100
 """
+#test error: account id already exists
+def test4():
+    sendCreate({"id": 7, "balance": 1000000}, [
+        {"id": 7, "symbol": "ETC", "num": 100},
+        {"id": 7, "symbol": "APPLE", "num": 300},
+    ])
+    sendCreate({"id": 7, "balance": 1000000}, [
+        {"id": 7, "symbol": "ETC", "num": 100},
+        {"id": 7, "symbol": "APPLE", "num": 300},
+    ])
+#test in transaction if account	ID	is	invalid,	then	an	<error>	will	be	reported	for	each	transaction
+def test5():
+    sendTransaction(8,[{"symbol":"AAA", "amount":-50, "limit":100}
+    ],[8],[8]) 
+#test in create position error if amount <0
+def test6():
+    sendCreate({"id": 8, "balance": 10000}, [
+        {"id": 8, "symbol": "BBB", "num": -100},
+    ])
+#test in cancel, try to cancel a executed order
+def test7():
+    sendCreate({"id": 9, "balance": 10000}, [
+        {"id": 9, "symbol": "BBB", "num": 100},
+    ])
+    sendTransaction(9,[
+        {"symbol":"BBB", "amount":100, "limit":10}, #transid=11
+    ],[11],[11])
+    sendTransaction(9,[
+    ],[11],[11])
+
+#test in cancel, try to cancel a not existed order
+def test8():
+     sendTransaction(9,[
+     ], 
+    [],[12])
+
+#test try to create a transaction which will deduct money more than the balance
+#or deduct stock more than position
+def test9():
+    sendCreate({"id": 10, "balance": 10}, [
+        {"id": 10, "symbol": "BBB", "num": 100},
+    ])
+    sendTransaction(10,[
+        {"symbol":"CCC", "amount":100, "limit":10}, 
+    ],[],[])
+    sendTransaction(10,[
+        {"symbol":"BBB", "amount":-110, "limit":10}, 
+    ],[],[])
+
+
+
+
+
+
+
+
 
 
 
@@ -127,10 +187,25 @@ sell
 
 
 if __name__ == "__main__":
+    print("test1: ##############################")
     test1()
+    print("test2: ##############################")
     test2()
-    print("##############################")
+    print("test3: ##############################")
     test3()
+    print("test4: ##############################")
+    test4()
+    print("test5: ##############################")
+    test5()
+    print("test6: ##############################")
+    test6()
+    print("test7: ##############################")
+    test7()
+    print("test8: ##############################")
+    test8()
+    print("test9: ##############################")
+    test9()
+
     
     
 
