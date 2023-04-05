@@ -15,10 +15,16 @@ def dropAllTable(engine):
 def getSession(engine):
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
+    engine.dispose()
     return session
+
+def dbInit():
+    engine = connectDB()
+    return getSession(engine)
 
 def initDB():
     engine = connectDB()
+    dropAllTable(engine)
     insp = inspect(engine)
     if not (insp.has_table("account") and insp.has_table("executed") and insp.has_table("order") and insp.has_table("position")):
         dropAllTable(engine)

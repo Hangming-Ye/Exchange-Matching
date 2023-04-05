@@ -10,50 +10,50 @@ import multiprocessing as MP
 import sys
 PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
 BUFFERSIZE = 2048
+PROCESSNUM = 4
 # 单次请求结束后是否应该关闭连接
 # 客户端是否会主动结束连接
 
-def process_request(fd, engine):
-    print("start processing request ")
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
+def process_request(fd):
+    session  = dbInit()
     request = recvXML(fd)
-    res = parseXML(request, session)
-    # xml to string
-    fd.send(tostring(res))
+    if request:
+        res = parseXML(request, session)
+        # xml to string
+        fd.send(tostring(res))
+        print(tostring(res))
     fd.close()
     session.close()
     # receive request from client
 
 def recvXML(fd):
     struSize = fd.recv(4)
-    if struSize == "":
+    if len(struSize) == 0:
+        print("!!!!!!!!!!!!!")
         return None
-    print(sys.getsizeof(struSize))
     size = struct.unpack("i", struSize)[0]
     request = fd.recv(size)
-    if request == "":
+    if len(request) == 0:
+        print("!!!!!!!!!!!!!")
         return None
     return request
 
 
 def server():
-    engine = initDB()
-    index = 1
+    initDB()
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((socket.gethostname(), PORT))
-    sock.listen()
-    print("----Start Listen at----")
-    pool = MP.Pool(processes=4)
+    sock.listen(100)
+    print("----Start Listen at port",PORT,"----")
+    pool = MP.Pool(PROCESSNUM)
     fdList = list()
     # act as a server to continue to accept request from client
     while (True):
         fd, addr = sock.accept()
-        print(addr, " connected as ", index)
-        index += 1
         fdList.append(fd)
-        process_request(fd, engine)
-        # pool.apply_async(process_request, (fd, engine, ))
+        if len(fdList) > 0:
+            tarFD = fdList.pop(0)
+            pool.apply_async(func=process_request, args=(tarFD,))
 
 
 # parse xml and call relevant function to deal with <create accout> <create postion> <open order> <cancel order> <query oder>
