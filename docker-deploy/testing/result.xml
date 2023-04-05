@@ -1,20 +1,323 @@
 #test 1
-<results><created id="1" /><created sym="ETC" id="1" /><created sym="APPLE" id="1" /></results>
-<results><created id="2" /><created sym="ETC" id="2" /><created sym="APPLE" id="2" /></results>
-<results><opened sym="ETC" amount="-100.0" limit="100.0" id="1" /><opened sym="GOOGLE" amount="100.0" limit="100.0" id="2" /><status id="1"><open shares="-100.0" /></status><canceled id="2"><canceled shares="100.0" time="1680477437" /></canceled></results>
-<results><opened sym="ETC" amount="100.0" limit="100.0" id="3" /><status id="3"><executed shares="100.0" price="100.0" time="1680477437" /></status></results>
+<create>
+    <account id="1" balance="1000000" />
+    <symbol sym="ETC">
+        <account id="1">100</account>
+    </symbol>
+    <symbol sym="APPLE">
+        <account id="1">300</account>
+    </symbol>
+</create>
+
+<results>
+    <created id="1" />
+    <created sym="ETC" id="1" />
+    <created sym="APPLE" id="1" />
+</results>
+<create>
+    <account id="2" balance="2000000" />
+    <symbol sym="ETC">
+        <account id="2">300</account>
+    </symbol>
+    <symbol sym="APPLE">
+        <account id="2">100</account>
+    </symbol>
+</create>
+<results>
+    <created id="2" />
+    <created sym="ETC" id="2" />
+    <created sym="APPLE" id="2" />
+</results>
+<transactions id="1">
+    <order sym="ETC" amount="-100" limit="100" />
+    <order sym="GOOGLE" amount="100" limit="100" />
+    <query id="1" />
+    <cancel id="2" />
+</transactions>
+<results>
+    <opened sym="ETC" amount="-100.0" limit="100.0" id="1" />
+    <opened sym="GOOGLE" amount="100.0" limit="100.0" id="2" />
+    <status id="1">
+        <open shares="-100.0" />
+    </status>
+    <canceled id="2">
+        <canceled shares="100.0" time="1680642564" />
+    </canceled>
+</results>
+<transactions id="2">
+    <order sym="ETC" amount="100" limit="100" />
+    <query id="3" />
+</transactions>
+<results>
+    <opened sym="ETC" amount="100.0" limit="100.0" id="3" />
+    <status id="3">
+        <executed shares="100.0" price="100.0" time="1680642564" />
+    </status>
+</results>
 #test 2
-<results><created id="3" /><created sym="ETC" id="3" /><created sym="APPLE" id="3" /></results>'
-<results><created id="4" /><created sym="ETC" id="4" /><created sym="APPLE" id="4" /></results>'
-<results><opened sym="ETC" amount="-50.0" limit="100.0" id="4" /><status id="4"><open shares="-50.0" /></status></results>'
-<results><opened sym="ETC" amount="100.0" limit="120.0" id="5" /><status id="5"><open shares="50.0" /><executed shares="50.0" price="100.0" time="1680478229" /></status><canceled id="5"><canceled shares="50.0" time="1680478229" /><executed shares="50.0" price="100.0" time="1680478229" /></canceled></results>
+<create>
+    <account id="3" balance="1000000" />
+    <symbol sym="ETC">
+        <account id="3">100</account>
+    </symbol>
+    <symbol sym="APPLE">
+        <account id="3">300</account>
+    </symbol>
+</create>
+<results>
+    <created id="3" />
+    <created sym="ETC" id="3" />
+    <created sym="APPLE" id="3" />
+</results>
+<create>
+    <account id="4" balance="2000000" />
+    <symbol sym="ETC">
+        <account id="4">300</account>
+    </symbol>
+    <symbol sym="APPLE">
+        <account id="4">100</account>
+    </symbol>
+</create>
+<results>
+    <created id="4" />
+    <created sym="ETC" id="4" />
+    <created sym="APPLE" id="4" />
+</results>
+<transactions id="3">
+    <order sym="ETC" amount="-50" limit="100" />
+    <query id="4" />
+</transactions>
+<results>
+    <opened sym="ETC" amount="-50.0" limit="100.0" id="4" />
+    <status id="4">
+        <open shares="-50.0" />
+    </status>
+</results>
+<transactions id="4">
+    <order sym="ETC" amount="100" limit="120" />
+    <query id="5" />
+    <cancel id="5" />
+</transactions>
+<results>
+    <opened sym="ETC" amount="100.0" limit="120.0" id="5" />
+    <status id="5">
+        <open shares="50.0" />
+        <executed shares="50.0" price="100.0" time="1680642564" />
+    </status>
+    <canceled id="5">
+        <canceled shares="50.0" time="1680642564" />
+        <executed shares="50.0" price="100.0" time="1680642564" />
+    </canceled>
+</results>
 #test 3
-b'<results><created id="5" /><created sym="APPLE" id="5" /></results>'
-b'<results><created id="6" /><created sym="APPLE" id="6" /></results>'
-b'<results><opened sym="APPLE" amount="-200.0" limit="128.0" id="6" /><status id="6"><open shares="-200.0" /></status></results>'
-b'<results><opened sym="APPLE" amount="-100.0" limit="129.0" id="7" /><status id="7"><open shares="-100.0" /></status></results>'
-b'<results><opened sym="APPLE" amount="100.0" limit="129.0" id="8" /><status id="8"><executed shares="100.0" price="128.0" time="1680480847" /></status></results>'
-b'<results><opened sym="APPLE" amount="100.0" limit="130.0" id="9" /><status id="9"><executed shares="100.0" price="128.0" time="1680480847" /></status></results>'
-b'<results><opened sym="APPLE" amount="100.0" limit="131.0" id="10" /><status id="10"><executed shares="100.0" price="129.0" time="1680480847" /></status></results>'
-b'<results><status id="6"><executed shares="100.0" price="128.0" time="1680480847" /><executed shares="100.0" price="128.0" time="1680480847" /></status></results>'
-b'<results><status id="7"><executed shares="100.0" price="129.0" time="1680480847" /></status></results>'
+<create>
+    <account id="5" balance="10000" />
+    <symbol sym="APPLE">
+        <account id="5">500</account>
+    </symbol>
+</create>
+<results>
+    <created id="5" />
+    <created sym="APPLE" id="5" />
+</results>
+<create>
+    <account id="6" balance="20000" />
+    <symbol sym="APPLE">
+        <account id="6">300</account>
+    </symbol>
+</create>
+<results>
+    <created id="6" />
+    <created sym="APPLE" id="6" />
+</results>
+<transactions id="5">
+    <order sym="APPLE" amount="-200" limit="128" />
+    <query id="6" />
+</transactions>
+<results>
+    <opened sym="APPLE" amount="-200.0" limit="128.0" id="6" />
+    <status id="6">
+        <open shares="-200.0" />
+    </status>
+</results>
+<transactions id="4">
+    <order sym="APPLE" amount="-100" limit="129" />
+    <query id="7" />
+</transactions>
+<results>
+    <opened sym="APPLE" amount="-100.0" limit="129.0" id="7" />
+    <status id="7">
+        <open shares="-100.0" />
+    </status>
+</results>
+<transactions id="1">
+    <order sym="APPLE" amount="100" limit="129" />
+    <query id="8" />
+</transactions>
+<results>
+    <opened sym="APPLE" amount="100.0" limit="129.0" id="8" />
+    <status id="8">
+        <executed shares="100.0" price="128.0" time="1680642564" />
+    </status>
+</results>
+<transactions id="2">
+    <order sym="APPLE" amount="100" limit="130" />
+    <query id="9" />
+</transactions>
+<results>
+    <opened sym="APPLE" amount="100.0" limit="130.0" id="9" />
+    <status id="9">
+        <executed shares="100.0" price="128.0" time="1680642565" />
+    </status>
+</results>
+<transactions id="3">
+    <order sym="APPLE" amount="100" limit="131" />
+    <query id="10" />
+</transactions>
+<results>
+    <opened sym="APPLE" amount="100.0" limit="131.0" id="10" />
+    <status id="10">
+        <executed shares="100.0" price="129.0" time="1680642565" />
+    </status>
+</results>'
+<transactions id="5">
+    <query id="6" />
+</transactions>'
+<results>
+    <status id="6">
+        <executed shares="100.0" price="128.0" time="1680642564" />
+        <executed shares="100.0" price="128.0" time="1680642565" />
+    </status>
+</results>
+<transactions id="6">
+    <query id="7" />
+</transactions>
+<results>
+    <status id="7">
+        <executed shares="100.0" price="129.0" time="1680642565" />
+    </status>
+</results>
+#test 4
+<create>
+    <account id="7" balance="1000000" />
+    <symbol sym="ETC">
+        <account id="7">100</account>
+    </symbol>
+    <symbol sym="APPLE">
+        <account id="7">300</account>
+    </symbol>
+</create>'
+
+<results>
+    <created id="7" />
+    <created sym="ETC" id="7" />
+    <created sym="APPLE" id="7" />
+</results>'
+
+<create>
+    <account id="7" balance="1000000" />
+    <symbol sym="ETC">
+        <account id="7">100</account>
+    </symbol>
+    <symbol sym="APPLE">
+        <account id="7">300</account>
+    </symbol>
+</create>
+
+<results>
+    <error id="7">account id has already exist</error>
+    <created sym="ETC" id="7" />
+    <created sym="APPLE" id="7" />
+</results>
+#test 5
+<transactions id="8">
+    <order sym="AAA" amount="-50" limit="100" />
+    <query id="8" />
+    <cancel id="8" />
+</transactions>
+<results>
+    <error sym="AAA" amount="-50.0" limit="100.0">invaild account: account does not exists</error>
+    <error id="8">invaild account: account does not exists</error>
+    <error id="8">invaild account: account does not exists</error>
+</results>
+#test 6
+<create>
+    <account id="8" balance="10000" />
+    <symbol sym="BBB">
+        <account id="8">-100</account>
+    </symbol>
+</create>
+<results>
+    <created id="8" />
+    <error sym="BBB" id="8">amount is lower than 0, but short position is forbidden</error>
+</results>
+#test 7
+<create>
+    <account id="9" balance="10000" />
+    <symbol sym="BBB">
+        <account id="9">100</account>
+    </symbol>
+</create>
+<results>
+    <created id="9" />
+    <created sym="BBB" id="9" />
+</results>
+<transactions id="9">
+    <order sym="BBB" amount="100" limit="10" />
+    <query id="11" />
+    <cancel id="11" />
+</transactions>
+<results>
+    <opened sym="BBB" amount="100.0" limit="10.0" id="11" />
+    <status id="11">
+        <open shares="100.0" />
+    </status>
+    <canceled id="11">
+        <canceled shares="100.0" time="1680642565" />
+    </canceled>
+</results>
+<transactions id="9">
+    <query id="11" />
+    <cancel id="11" />
+</transactions>
+<results>
+    <status id="11">
+        <canceled shares="100.0" time="1680642565" />
+    </status>
+    <error id="11">order has been canceled already, cannot be canceled again</error>
+</results>
+#test 8
+<transactions id="9">
+    <cancel id="12" />
+</transactions>
+<results>
+    <error id="12">order does not exist, please type in the correct transaction id</error>
+</results>
+#test 9
+<create>
+    <account id="10" balance="10" />
+    <symbol sym="BBB">
+        <account id="10">100</account>
+    </symbol>
+</create>
+
+<results>
+    <created id="10" />
+    <created sym="BBB" id="10" />
+</results>
+
+<transactions id="10">
+    <order sym="CCC" amount="100" limit="10" />
+</transactions>'
+
+<results>
+    <error sym="CCC" amount="100.0" limit="10.0">Insufficient Balance</error>
+</results>
+
+<transactions id="10">
+    <order sym="BBB" amount="-110" limit="10" />
+</transactions>
+
+<results>
+    <error sym="BBB" amount="-110.0" limit="10.0">Insufficient Share Amount</error>
+</results>
