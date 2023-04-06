@@ -8,15 +8,14 @@ from orm import *
 import multiprocessing as MP
 
 PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
-PROCESSNUM = 4
-
+PROCESSNUM = 8
 
 def init(l):
     global lock
     lock = l
 
 def process_request(fd):
-    session  = dbInit()
+    session, engine  = dbInit()
     request = recvXML(fd)
     if request != None:
         res = parseXML(request, session)
@@ -24,6 +23,7 @@ def process_request(fd):
         fd.send(tostring(res))
     fd.close()
     session.close()
+    engine.dispose()
     # receive request from client
 
 

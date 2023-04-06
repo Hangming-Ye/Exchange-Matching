@@ -1,0 +1,74 @@
+Danger 1 "read-modify-write" cycles
+Danger 1.1 Row Level Lock
+Initially, we used row level locks, but we discovered that this was causing deadlock situations, leading to unresponsive error responses during concurrent testing.
+
+Solution 1.1
+Upon further investigation, we found that the commit at the bottom of the function was releasing the lock. However, when an error occurred and the program entered the error logic, the lock was not released in a timely manner, potentially causing the deadlock. To solve this issue, we added a commit within the error logic to release the row lock. This approach resolved the problem of unresponsive error responses.
+
+Danger 1.2 Direct Update Without Querying
+We attempted to update data directly without first querying it. For example, using the following code:
+
+session.query(Account).filter_by(id=1).update({"amount": Account.amount + amount})
+session.commit()
+
+However, we realized that querying was necessary since we needed to access some properties of the record to determine what modifications to make.
+
+Danger 1.3 Process Lock
+Initially, we locked the entire process, such as by locking "parse_xml". However, we later discovered that this had no performance advantage over single-process execution.
+
+Solution 1.3
+We modified our locking strategy to only apply locks to code that modified the database. For code that did not modify the database, such as create account, we did not apply locks. This greatly improved execution speed and CPU utilization, bringing it back to normal levels. We found that this change was due to the reduced time for socket information exchange and XML parsing resulting from concurrency and a reduced amount of code under locks.
+
+Danger 2 Database connection is thread safe and have limited maximum number
+When we try to parallize our code, we first use one engine and one session for all processes. However, this causes an exception, the database not allow we to do this. This is because the session is thread safe and cannot be share between different processes. Therefore, we init a session for all incoming requests. This cause another exception which shows that "FATAL:  sorry, too many clients already".
+
+Solution 2
+We then close the session and dispose the engine after the session is close. However, after we write the initlizer of the process, we find that it may be a better solution if we initilize the session and bind it for each processes in the pool.
+
+Danger 3 Inconsistent Handling of Invalid Account IDs in Transaction Logic
+Initially, we handled the issue of invalid account IDs separately in each corresponding module, such as order, cancel, and query. However, we found that this approach was prone to errors and made it difficult to meet the requirement that any invalid account ID should be reported as an error tag to all operations within the transaction.
+
+Solution 3
+To address this issue, we created a separate "checkAccount" function and integrated it into the beginning of each corresponding module in the transaction logic. This approach ensured accuracy and consistency in handling invalid account IDs while also improving the logic of the code.
+
+Danger 4 Inconsistent Sizing of Python Integers for Socket Transmissions
+Python integers do not have a specific size, but we needed to send the size of XML to the server in advance of sending the XML itself over the socket. This size was sent as an integer type.
+
+Solution 4
+To address the issue of inconsistent integer sizes for socket transmissions, we used the "struct" library to specify that the integer should have a size of 4 bytes. This approach ensured that the integer was properly sized for socket transmissions and avoided any potential errors caused by inconsistent integer sizing.
+
+Danger 5 Idle Client Connections Due to Server-side Socket Closure
+We found that the client could become idle in certain situations because we only had a fixed number of processes. If the server-side socket was not closed directly, this could cause idle connections on the client side and lead to decreased concurrency efficiency.
+
+Solution 5
+To address this issue, we explicitly specified in the program to close the corresponding socket on the client side after the server had sent the response. This approach ensured that idle client connections were minimized, leading to increased concurrency efficiency.
+
+Danger 6: Reduced Concurrency Efficiency Due to Synchronous Pool
+Initially, we used a synchronous pool as our concurrency strategy. However, we found that this approach caused some waiting time, which led to a decrease in concurrency efficiency.
+
+Solution 6
+To address this issue, we changed our strategy and switched to an asynchronous pool. This provided improved process execution efficiency, reducing idle time and increasing concurrency efficiency.
+
+Danger 7 Potential Typo Errors Due to Direct SQL Statement Writing
+Initially, we chose to directly write SQL statements for our database queries, updates, inserts, and other operations. However, we later realized that this approach could introduce many potential typo errors.
+
+Solution 7
+To address this issue, we opted to use the ORM layer of SQLAlchemy. This significantly improved our code's stability by providing a higher level of abstraction and handling many low-level details for us.
+
+Danger 8 Packet Loss Due to Excessive Listening on a Single Port
+We found that there is a limit to the number of connections that can be listened on a single port. If the number of connections exceeds a certain limit, it can cause packet loss.
+
+Solution 8
+To address this issue, we implemented a FIFO queue structure. We put the incoming sockets into the queue and pop them out when the pool is idle. This approach helps to shift the load from the port to the server internals, making the overall data transfer more stable and reducing the occurrence of packet loss.
+
+Danger 9 Bugs Arising from High Workload Testing
+Initially, when we tested our program using a high workload, we encountered several bugs. These bugs were difficult to locate and solve due to the high volume of simultaneous send and receive operations.
+
+Solution 9
+To address this issue, we wrote unit tests for each class and coverage tests for the entire server to ensure the stability of each step. We then conducted workload testing after we were confident in the stability of our code.
+
+Danger 10 Data Loss Due to Initial Database Design
+Initially, we designed the database to have a position list under each account and an executed list under each order. We planned to use JSON to store the lists. However, we later found that this design had stability issues, and large amounts of data could cause data loss.
+
+Solution
+To address this issue, we redesigned the database and created separate tables for positions and orders with foreign keys linking to the account and order tables, respectively. This ensured the stability of the database and prevented data loss.

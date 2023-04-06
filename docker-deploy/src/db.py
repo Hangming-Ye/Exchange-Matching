@@ -15,8 +15,8 @@ def dropAllTable(engine):
 def getSession(engine):
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
-    engine.dispose()
-    return session
+    
+    return session, engine
 
 def dbInit():
     engine = connectDB()

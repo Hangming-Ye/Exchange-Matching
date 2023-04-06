@@ -1,10 +1,12 @@
 from xml_request_generator import *
+from xml.etree.ElementTree import tostring
 import socket, time, struct, threading
 from testdb import *
 import matplotlib.pyplot as plt
-
+import fcntl
 HOST = '0.0.0.0'
 PORT = 12345
+FILEPATH = ''
 
 def hybridTest(id):
     hybridTestEven(id) if id%2==0 else hybridTestOdd(id)
@@ -26,12 +28,17 @@ def request(id, xml):
     try:
         sock = conn()
         sendXML(sock, tostring(xml))
-        sock.recv(65535)
+        resp = sock.recv(65535)
+        write(resp)
         sock.close()
     except socket.timeout:
         print("packet loss")
         sock.close()
 
+def write(xml):
+    with open('workloadTestResult.xml', 'a') as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX) #加锁
+        f.write(str(xml, 'utf-8')+"\r\n")
 
 def createTest(id):
     request(id, createRequestGenerator({"id": id, "balance": id*id}, [{"id": id, "symbol": "BTC", "num": id*id}]))
@@ -65,10 +72,10 @@ def cancelPre(num):
     for t in threadList:
         t.join()
 
-def conTest(num, func, ins):
+def conTest(begin, end, func, ins):
     start = time.time()
     threadList = list()
-    for i in range(1, num+1):
+    for i in range(begin, end):
         t = threading.Thread(target=func, args=(i,))
         t.start()
         threadList.append(t)
@@ -76,7 +83,7 @@ def conTest(num, func, ins):
     for t in threadList:
         t.join()
     end = time.time()
-    return (end - start)/(num*ins)
+    return (end - start)/((end-begin)*ins)
 
 
 def seqTest(num, func, ins):
@@ -129,7 +136,7 @@ def manDraw1():
 
 def manDraw2():
     xlist = [1, 2, 4]
-    ylist = [0.04141168594360352, 0.03765674432118734, 0.03458372513453166]
+    ylist = [0.019675454298655193, 0.01565829594930013, 0.013335924943288167]
     title = "Concurrency Performance with Different Core Num"
     plt.plot(xlist,ylist)
     plt.xlabel("Core Number")
@@ -143,9 +150,13 @@ def manDraw2():
     plt.show()
     plt.close()
 
+
 if __name__ == "__main__":
-    graph(createTest, 1, [40, 80, 160, 320, 480, 540],"Create Test Performance with Different Workload")
-    graph(cancelTest, 1, [20, 40, 80, 160, 240, 320],"Cancel Test Performance with Different Workload")
-    graph(hybridTest, 3, [20, 40, 80, 160, 240, 320],"Hybrid Test Performance with Different Workload")
-    manDraw1()
-    manDraw2()
+    # graph(createTest, 1, [40, 80, 160, 320, 480, 540],"Create Test Performance with Different Workload")
+    # graph(cancelTest, 1, [20, 40, 80, 160, 240, 320],"Cancel Test Performance with Different Workload")
+    # graph(hybridTest, 3, [20, 40, 80, 160, 240, 320],"Hybrid Test Performance with Different Workload")
+    # manDraw1()
+    # manDraw2()
+    cancelPre(100)
+    time1 = conTest(1, 101, cancelTest, 1)
+    time2 = conTest(101, 201, hybridTest, 3)
