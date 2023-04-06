@@ -4,7 +4,7 @@ import psycopg2
 from orm import *
 
 def connectDB():
-    return create_engine("postgresql+psycopg2://postgres:passw0rd@0.0.0.0:5432/EM_SYSTEM",future=True)
+    return create_engine("postgresql+psycopg2://postgres:passw0rd@db:5432/EM_SYSTEM",future=True)
 
 def createAllTable(engine):
     Base.metadata.create_all(engine)

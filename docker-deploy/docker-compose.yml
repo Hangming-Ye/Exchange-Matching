@@ -1,10 +1,26 @@
 version: '2'
 
 services:
-  main:
-    build: ./src
-    command: bash -c "./run.sh"
-    volumes:
-      - ./src:/src
-    ports:
-      - "12345:12345"
+  db:
+      image: postgres
+      environment:
+              - POSTGRES_DB=EM_SYSTEM
+              - POSTGRES_USER=postgres
+              - POSTGRES_PASSWORD=passw0rd
+      expose:
+        - "5432"
+      volumes:
+            - data-volume:/var/lib/postgresql/data
+  server:
+      build: ./src
+      user: root
+      command: "/src/run.sh"
+      volumes:
+        - ./logs:/var/log/erss
+        - ./src:/src
+      ports:
+        - "12345:12345"
+      depends_on: 
+        - db
+volumes:
+   data-volume: 

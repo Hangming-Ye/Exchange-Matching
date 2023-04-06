@@ -7,8 +7,6 @@ from xml.etree.ElementTree import tostring
 from sqlalchemy.orm.exc import NoResultFound
 import xml.etree.ElementTree as ET
 
-# 自己创建的order自己应该不能搜索到吧？
-
 
 '''
 @Desc   : unit test function for transaction
@@ -28,7 +26,6 @@ def testMtd(session, amount, limit, sym, accout_id):
         makeTransaction(session, od_id)
     print(tostring(res))
     tree = ET.ElementTree(res)
-    #tree.write(str(accout_id)+".xml",xml_declaration=True,encoding='UTF-8')
 
 
 '''
@@ -40,9 +37,6 @@ def testMtd(session, amount, limit, sym, accout_id):
 '''
 def createOrder(session, amount, price, sym, uid):
     # check user existence
-    
-    # if session.query(Account).get(uid) is None:
-    #     raise ArgumentError("Account does not exist")
     
     # buy order
     if amount > 0:
@@ -81,7 +75,7 @@ def makeTransaction(session, od_id):
           -1 when the transaction is not open or no matching transaction
 '''
 def matchOrder(session, od_id):
-    od = session.query(Order).get(od_id)
+    od = session.query(Order).filter_by(tran_id = od_id).first()
 
     # if order is not open
     if od.status != StatusEnum.open:
@@ -114,8 +108,8 @@ def matchOrder(session, od_id):
 @Return : void
 '''
 def executeOrder(session, new_id, old_id):
-    new = session.query(Order).with_for_update(of=Order).filter_by(tran_id = new_id).first()
-    old = session.query(Order).with_for_update(of=Order).filter_by(tran_id = old_id).first()
+    new = session.query(Order).filter_by(tran_id = new_id).first()
+    old = session.query(Order).filter_by(tran_id = old_id).first()
 
     #determine sell and buy
     if new.remain_amount > 0:
@@ -124,29 +118,25 @@ def executeOrder(session, new_id, old_id):
     else:
         buy = old
         sell = new
-    
+
     # determine execute price, amount and refund for buyer (if have)
     price  = old.limit_price
-    exe_amount = min(buy.remain_amount, -sell.remain_amount)
+    exe_amount = min(abs(buy.remain_amount), abs(sell.remain_amount))
     refund = (buy.limit_price - price) * exe_amount
 
     modifyPosition(session, buy.symbol, buy.account_id, exe_amount)
 
     exeTime = int(time.time())
-
     buy.remain_amount -= exe_amount
     if buy.remain_amount == 0:
         buy.status = StatusEnum.executed
-    # session.commit()
+    session.commit()
 
     sell.remain_amount += exe_amount
     if sell.remain_amount == 0:
         sell.status = StatusEnum.executed
-    # session.commit()
-    # Commit the changes in one go
-    session.add_all([buy, sell])
     session.commit()
-
+    
     addExecuted(session, exe_amount, price, buy.tran_id, exeTime)
     addExecuted(session, exe_amount, price, sell.tran_id, exeTime)
 
@@ -162,9 +152,9 @@ def executeOrder(session, new_id, old_id):
 @Excep  : User not exist, Insufficient Balance
 '''
 def modifyBalance(session, uid, change):
-    # row level lock by using with with_for_update method in sqlAlchemy
-    user = session.query(Account).filter_by(account_id = uid).with_for_update().one()
+    user = session.query(Account).filter_by(account_id = uid).one()
     if user == None:
+        session.commit()
         raise ArgumentError('User not exist')
     
     user.balance += change
@@ -182,7 +172,7 @@ def modifyBalance(session, uid, change):
 @Excep  : Position not exist, Insufficient Share Amount
 '''
 def modifyPosition(session, sym, uid, change):
-    stock = session.query(Position).filter_by(account_id = uid, symbol = sym).with_for_update().first()
+    stock = session.query(Position).filter_by(account_id = uid, symbol = sym).first()
     # position not find
     if stock == None:
         if change < 0:
@@ -217,12 +207,10 @@ def CancelOrder(session, id, res):
     #res = ET.Element('result')
     try:
         # Query the order with row locking
-        order = session.query(Order).filter_by(tran_id=id).with_for_update().one()
-
+        order = session.query(Order).filter_by(tran_id=id).one()
         if order.status == StatusEnum.open:
             # Change the status to canceled and refund immediately
             order.status = StatusEnum.canceled
-
             if order.remain_amount >= 0:
                 # Refund money to account
                 refund_money = order.limit_price * order.remain_amount
@@ -230,7 +218,7 @@ def CancelOrder(session, id, res):
             else:
                 # Refund stock to position
                 refund_amount = order.remain_amount
-                modifyPosition(session, order.symbol, order.account_id, refund_amount)
+                modifyPosition(session, order.symbol, order.account_id, -refund_amount)
 
             # Update the response with the new status of the order
             under_cancel = ET.SubElement(res, 'canceled', {'id': str(id)})

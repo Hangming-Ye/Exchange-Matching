@@ -1,28 +1,27 @@
-import socket
-import struct
+import socket, struct
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import tostring
 from datetime import datetime
 from create import *
 from orderUtils import *
 from orm import *
-from sqlalchemy.orm import sessionmaker
 import multiprocessing as MP
-import sys
-PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
-BUFFERSIZE = 2048
+
+PORT = 12345  # Port to listen on (non-privileged ports are > 1023)
 PROCESSNUM = 4
-# 单次请求结束后是否应该关闭连接
-# 客户端是否会主动结束连接
+
+
+def init(l):
+    global lock
+    lock = l
 
 def process_request(fd):
     session  = dbInit()
     request = recvXML(fd)
-    if request:
+    if request != None:
         res = parseXML(request, session)
         # xml to string
         fd.send(tostring(res))
-        print(tostring(res))
     fd.close()
     session.close()
     # receive request from client
@@ -31,31 +30,12 @@ def process_request(fd):
 def recvXML(fd):
     struSize = fd.recv(4)
     if len(struSize) == 0:
-        print("!!!!!!!!!!!!!")
         return None
     size = struct.unpack("i", struSize)[0]
     request = fd.recv(size)
     if len(request) == 0:
-        print("!!!!!!!!!!!!!")
         return None
     return request
-
-
-def server():
-    initDB()
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((socket.gethostname(), PORT))
-    sock.listen(100)
-    print("----Start Listen at port",PORT,"----")
-    pool = MP.Pool(PROCESSNUM)
-    fdList = list()
-    # act as a server to continue to accept request from client
-    while (True):
-        fd, addr = sock.accept()
-        fdList.append(fd)
-        if len(fdList) > 0:
-            tarFD = fdList.pop(0)
-            pool.apply_async(func=process_request, args=(tarFD,))
 
 
 # parse xml and call relevant function to deal with <create accout> <create postion> <open order> <cancel order> <query oder>
@@ -106,28 +86,24 @@ def parseXML(request, session):
                     else:
                         ET.SubElement(res, 'opened', {'sym': sym, 'amount': str(
                             amount), 'limit': str(limit), 'id': str(od_id)})
+                        lock.acquire()
                         makeTransaction(session, od_id)
+                        lock.release()
                 else:
                     createError = ET.SubElement(
                             res, 'error', {'sym': sym, 'amount': str(amount), 'limit': str(limit)})
                     createError.text = "invaild account: account does not exists"
-
-
             elif (child.tag == "cancel"):
                 tran_id = child.get('id')
-                
                 if account_exists:
-                    print("cancellllllllllllllllllllllll")
-                    
                     # now need to change database table Order to change its' status from open to cancel
                     # name function CancelOrder
+                    lock.acquire()
                     CancelOrder(session, tran_id, res)
+                    lock.release()
                 else:
                     error = ET.SubElement(res, 'error', {'id': str(tran_id)})
                     error.text = "invaild account: account does not exists"
-
-                
-
             elif (child.tag == "query"):
                 tran_id = child.get('id')
                 if account_exists:
@@ -138,7 +114,6 @@ def parseXML(request, session):
                 else:
                     error = ET.SubElement(res, 'error', {'id': str(tran_id)})
                     error.text = "invaild account: account does not exists"
-
 
             else:
                 error = ET.SubElement(res, 'error', {'id': str(id)})
@@ -202,10 +177,18 @@ def test(xml):
 
 
 if __name__ == "__main__":
-    # filename = 'text.xml'
-    # f = open(filename, 'rb')
-    # xml = f.read(1024)
-    # print(xml)
-    # test(xml)
-    print("hhhhhhhhhi")
-    server()
+    initDB()
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((socket.gethostname(), PORT))
+    sock.listen(100)
+    print("----Start Listen at port",PORT,"----")
+    l = MP.Lock()
+    pool = MP.Pool(processes=PROCESSNUM, initializer=init, initargs=(l,))
+    fdList = list()
+    # act as a server to continue to accept request from client
+    while (True):
+        fd, addr = sock.accept()
+        fdList.append(fd)
+        if len(fdList) > 0:
+            tarFD = fdList.pop(0)
+            pool.apply_async(func=process_request, args=(tarFD,))

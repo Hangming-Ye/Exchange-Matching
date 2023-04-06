@@ -5,8 +5,8 @@ from workloadTest import *
 
 def sendCreate(new_account, position_list):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = 'vcm-32401.vm.duke.edu'
-    port = 1234
+    host = '0.0.0.0'
+    port = 12345
     sock.connect((host, port))
     create_requets = createRequestGenerator(new_account, position_list)
     print(tostring(create_requets))
