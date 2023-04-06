@@ -26,7 +26,7 @@ def request(id, xml):
     try:
         sock = conn()
         sendXML(sock, tostring(xml))
-        print(sock.recv(65535))
+        sock.recv(65535)
         sock.close()
     except socket.timeout:
         print("packet loss")
