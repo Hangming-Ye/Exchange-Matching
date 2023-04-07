@@ -9,23 +9,22 @@ def sendCreate(new_account, position_list):
     port = 12345
     sock.connect((host, port))
     create_requets = createRequestGenerator(new_account, position_list)
-    print(tostring(create_requets))
+    print(str(tostring(create_requets), 'utf-8'))
     # sock.send(tostring(create_requets))
     sendXML(sock,tostring(create_requets))
     data = sock.recv(65535)
-    print(data)
+    print(str(data, 'utf-8'))
 
 def sendTransaction(account_id, order_list, query_list, cancel_list):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = 'vcm-32401.vm.duke.edu'
-    port = 1234
+    host = '0.0.0.0'
+    port = 12345
     sock.connect((host, port))
     create_requets = TransRequestGenerator(account_id, order_list, query_list, cancel_list)
-    print(tostring(create_requets))
-    # sock.send(tostring(create_requets))
+    print(str(tostring(create_requets), 'utf-8'))
     sendXML(sock,tostring(create_requets))
     data = sock.recv(65535)
-    print(data)
+    print(str(data, 'utf-8'))
 
 # test complete execute
 def test1():

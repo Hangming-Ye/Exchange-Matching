@@ -1,5 +1,9 @@
 # Exchange-Matching
 
+> **!!!!!!!Attention**
+>
+> The docker will set up services simultaneously. Therefore, if the docker-compose up failed, this is because the server run before the database complete. **Run it again and it will success**
+
 A piece of software which will match buy and sell orders for a stock/commodities market.
 
 ## How to run server
@@ -11,6 +15,10 @@ run
 ```bash
 sudo docker-compose up
 ```
+
+> **!!!!!!!Attention**
+>
+> The docker will set up services simultaneously. Therefore, if the docker-compose up failed, this is because the server run before the database complete. **Run it again and it will success**
 
 ## How to run test
 
