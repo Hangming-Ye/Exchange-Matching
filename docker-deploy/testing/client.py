@@ -10,7 +10,6 @@ def sendCreate(new_account, position_list):
     sock.connect((host, port))
     create_requets = createRequestGenerator(new_account, position_list)
     print(str(tostring(create_requets), 'utf-8'))
-    # sock.send(tostring(create_requets))
     sendXML(sock,tostring(create_requets))
     data = sock.recv(65535)
     print(str(data, 'utf-8'))
@@ -168,22 +167,6 @@ def test9():
     sendTransaction(10,[
         {"symbol":"BBB", "amount":-110, "limit":10}, 
     ],[],[])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     print("test1: ##############################")
